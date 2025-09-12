@@ -17,7 +17,7 @@ export default function Chat() {
   const { jobId } = useParams();
   const { user } = useAuth();
   const { isConnected } = useWebSocket();
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
 
   // Fetch user's chats
   const { data: chatsData, isLoading: chatsLoading } = useQuery({
@@ -41,7 +41,7 @@ export default function Chat() {
 
   useEffect(() => {
     if (jobChatData?.chat && !selectedChatId) {
-      setSelectedChatId(jobChatData.chat._id);
+      setSelectedChatId(jobChatData.chat.id);
     }
   }, [jobChatData, selectedChatId]);
 
@@ -93,14 +93,14 @@ export default function Chat() {
                   <div className="space-y-2 p-4">
                     {chatsData.chats.map((chat: any) => (
                       <div
-                        key={chat._id}
+                        key={chat.id}
                         className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                          selectedChatId === chat._id 
+                          selectedChatId === chat.id 
                             ? 'bg-primary/10 border border-primary/20' 
                             : 'hover:bg-muted/50 border border-transparent'
                         }`}
-                        onClick={() => setSelectedChatId(chat._id)}
-                        data-testid={`chat-item-${chat._id}`}
+                        onClick={() => setSelectedChatId(chat.id)}
+                        data-testid={`chat-item-${chat.id}`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium text-sm truncate">

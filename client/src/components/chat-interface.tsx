@@ -81,14 +81,14 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
       if (data.chatId === chatId) {
         queryClient.invalidateQueries({ queryKey: ['/api/chats', chatId] });
         // Mark as read if user is viewing this chat
-        if (data.message.senderId !== user?._id) {
+        if (data.message.senderId !== user?.id) {
           setTimeout(() => markAsReadMutation.mutate(), 500);
         }
       }
     };
 
     onNewMessage(handleNewMessage);
-  }, [chatId, onNewMessage, queryClient, user?._id, markAsReadMutation]);
+  }, [chatId, onNewMessage, queryClient, user?.id, markAsReadMutation]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -116,12 +116,12 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
 
   const getOtherParticipantName = () => {
     if (!chat || !user) return "Unknown";
-    const otherParticipant = chat.participants.find(p => p !== user._id);
+    const otherParticipant = chat.participants.find(p => p !== user.id);
     return otherParticipant ? "Chat Partner" : "Unknown";
   };
 
   const getUserInitials = (userId: string) => {
-    if (userId === user?._id) {
+    if (userId === user?.id) {
       return user.contactPersonName?.substring(0, 2).toUpperCase() || "ME";
     }
     return "CP"; // Chat Partner
@@ -187,7 +187,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
           <div className="space-y-4">
             {chat.messages && chat.messages.length > 0 ? (
               chat.messages.map((message, index) => {
-                const isOwn = message.senderId === user?._id;
+                const isOwn = message.senderId === user?.id;
                 
                 return (
                   <div

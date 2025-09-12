@@ -236,7 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         verified: false
       }));
 
-      const updatedUser = await storage.updateUser(req.user!._id!, { documents });
+      await storage.updateUser(req.user!.id, { documents });
+      const updatedUser = await storage.getUserById(req.user!.id);
 
       res.json({ 
         message: 'Documents uploaded successfully',
@@ -253,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobData = insertJobSchema.parse({
         ...req.body,
-        shipperId: req.user!._id,
+        shipperId: req.user!.id,
         pickupDate: new Date(req.body.pickupDate),
         deliveryDeadline: new Date(req.body.deliveryDeadline)
       });
@@ -261,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const job = await storage.createJob(jobData);
 
       // Notify relevant trucking companies
-      wsService.sendJobUpdate(job._id!, {
+      wsService.sendJobUpdate(job.id, {
         type: 'new_job',
         job
       });
@@ -301,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limitNum = parseInt(limit as string);
       const skip = (pageNum - 1) * limitNum;
 
-      const jobs = await storage.getJobs(filters, limitNum, skip);
+      const jobs = await storage.getJobs({ ...filters, limit: limitNum, offset: skip });
 
       res.json({ jobs });
     } catch (error: any) {
@@ -314,9 +315,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let jobs;
       if (req.user!.role === UserRole.SHIPPING_ENTITY) {
-        jobs = await storage.getJobsByShipper(req.user!._id!);
+        jobs = await storage.getJobsByShipper(req.user!.id);
       } else if (req.user!.role === UserRole.TRUCKING_COMPANY) {
-        jobs = await storage.getJobsByCarrier(req.user!._id!);
+        jobs = await storage.getJobsByCarrier(req.user!.id);
       } else {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -331,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/jobs/:id/take', authenticateToken, requireRole([UserRole.TRUCKING_COMPANY]), requireSubscription, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
-      const job = await storage.takeJob(id, req.user!._id!);
+      const job = await storage.takeJob(id, req.user!.id);
 
       if (!job) {
         return res.status(404).json({ message: 'Job not found or already taken' });
@@ -342,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'job_taken',
         title: 'Job Taken',
         message: `Your job has been taken by ${req.user!.companyName}`,
-        data: { jobId: job._id }
+        data: { jobId: job.id }
       });
 
       res.json({ message: 'Job taken successfully', job });
@@ -362,9 +363,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check permissions
-      if (req.user!.role === UserRole.SHIPPING_ENTITY && job.shipperId !== req.user!._id) {
+      if (req.user!.role === UserRole.SHIPPING_ENTITY && job.shipperId !== req.user!.id) {
         return res.status(403).json({ message: 'Not authorized to complete this job' });
-      } else if (req.user!.role === UserRole.TRUCKING_COMPANY && job.carrierId !== req.user!._id) {
+      } else if (req.user!.role === UserRole.TRUCKING_COMPANY && job.carrierId !== req.user!.id) {
         return res.status(403).json({ message: 'Not authorized to complete this job' });
       }
 
@@ -376,14 +377,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'job_completed',
           title: 'Job Completed',
           message: `Job has been marked as completed by ${req.user!.companyName}`,
-          data: { jobId: completedJob._id }
+          data: { jobId: completedJob.id }
         });
       } else if (req.user!.role === UserRole.TRUCKING_COMPANY) {
         wsService.sendNotificationToUser(completedJob!.shipperId, {
           type: 'job_completed',
           title: 'Job Completed',
           message: `Job has been marked as completed by ${req.user!.companyName}`,
-          data: { jobId: completedJob!._id }
+          data: { jobId: completedJob!.id }
         });
       }
 
@@ -397,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.get('/api/chats', authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const chats = await storage.getChatsByUser(req.user!._id!);
+      const chats = await storage.getChatsByUser(req.user!.id);
       res.json({ chats });
     } catch (error: any) {
       console.error('Chats fetch error:', error);
@@ -423,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           participants.push(job.carrierId);
         }
 
-        if (!participants.includes(req.user!._id!)) {
+        if (!participants.includes(req.user!.id)) {
           return res.status(403).json({ message: 'Not authorized to access this chat' });
         }
 
@@ -435,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user is participant
-      if (!chat.participants.includes(req.user!._id!)) {
+      if (!chat.participants.includes(req.user!.id)) {
         return res.status(403).json({ message: 'Not authorized to access this chat' });
       }
 
@@ -449,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/chats/:id/read', authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
-      const success = await storage.markMessagesAsRead(id, req.user!._id!);
+      const success = await storage.markMessagesAsRead(id, req.user!.id);
 
       if (!success) {
         return res.status(404).json({ message: 'Chat not found' });
@@ -466,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/notifications', authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { limit = '50' } = req.query;
-      const notifications = await storage.getNotificationsByUser(req.user!._id!, parseInt(limit as string));
+      const notifications = await storage.getNotificationsByUser(req.user!.id, parseInt(limit as string));
       res.json({ notifications });
     } catch (error: any) {
       console.error('Notifications fetch error:', error);

@@ -6,7 +6,7 @@ import { User } from '@shared/schema';
 
 export class WebSocketService {
   private io: SocketIOServer;
-  private userSockets: Map<string, string> = new Map(); // userId -> socketId
+  private userSockets: Map<number, string> = new Map(); // userId -> socketId
 
   constructor(server: HTTPServer) {
     this.io = new SocketIOServer(server, {
@@ -29,7 +29,7 @@ export class WebSocketService {
           throw new Error('No token provided');
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
         const user = await storage.getUserById(decoded.userId);
         
         if (!user) {
@@ -47,12 +47,12 @@ export class WebSocketService {
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
       const user: User = socket.data.user;
-      this.userSockets.set(user._id!, socket.id);
+      this.userSockets.set(user.id, socket.id);
 
       console.log(`User ${user.email} connected via WebSocket`);
 
       // Join user to their personal room for notifications
-      socket.join(`user:${user._id}`);
+      socket.join(`user:${user.id}`);
 
       // Handle chat joining
       socket.on('join_chat', (chatId: string) => {
@@ -68,16 +68,22 @@ export class WebSocketService {
       socket.on('send_message', async (data: { chatId: string; content: string }) => {
         try {
           const { chatId, content } = data;
+          const chatIdNum = parseInt(chatId, 10);
+          
+          if (isNaN(chatIdNum)) {
+            socket.emit('error', { message: 'Invalid chat ID' });
+            return;
+          }
           
           // Add message to database
-          const updatedChat = await storage.addMessage(chatId, user._id!, content);
+          const updatedChat = await storage.addMessage(chatIdNum, user.id, content);
           
           if (updatedChat) {
             // Broadcast message to all participants in the chat
             socket.to(`chat:${chatId}`).emit('new_message', {
               chatId,
               message: {
-                senderId: user._id,
+                senderId: user.id,
                 content,
                 timestamp: new Date(),
                 read: false
@@ -86,12 +92,12 @@ export class WebSocketService {
 
             // Send notification to other participants
             for (const participantId of updatedChat.participants) {
-              if (participantId !== user._id) {
+              if (participantId !== user.id) {
                 this.sendNotificationToUser(participantId, {
                   type: 'new_message',
                   title: 'New Message',
                   message: `New message from ${user.contactPersonName}`,
-                  data: { chatId, senderId: user._id }
+                  data: { chatId, senderId: user.id }
                 });
               }
             }
@@ -104,7 +110,7 @@ export class WebSocketService {
       // Handle typing indicators
       socket.on('typing', (data: { chatId: string; isTyping: boolean }) => {
         socket.to(`chat:${data.chatId}`).emit('user_typing', {
-          userId: user._id,
+          userId: user.id,
           userName: user.contactPersonName,
           isTyping: data.isTyping
         });
@@ -112,14 +118,14 @@ export class WebSocketService {
 
       // Handle disconnect
       socket.on('disconnect', () => {
-        this.userSockets.delete(user._id!);
+        this.userSockets.delete(user.id);
         console.log(`User ${user.email} disconnected from WebSocket`);
       });
     });
   }
 
   // Send notification to specific user
-  public sendNotificationToUser(userId: string, notification: {
+  public sendNotificationToUser(userId: number, notification: {
     type: string;
     title: string;
     message: string;
@@ -129,7 +135,7 @@ export class WebSocketService {
   }
 
   // Send job update to all relevant users
-  public sendJobUpdate(jobId: string, update: any) {
+  public sendJobUpdate(jobId: number, update: any) {
     this.io.emit('job_update', { jobId, ...update });
   }
 

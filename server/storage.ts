@@ -45,8 +45,8 @@ interface IStorage {
   getJobsByShipper(shipperId: number): Promise<Job[]>;
   getJobsByCarrier(carrierId: number): Promise<Job[]>;
   updateJob(id: number, data: Partial<Omit<Job, 'id' | 'createdAt'>>): Promise<void>;
-  takeJob(jobId: number, carrierId: number): Promise<void>;
-  completeJob(jobId: number): Promise<void>;
+  takeJob(jobId: number, carrierId: number): Promise<Job | null>;
+  completeJob(jobId: number): Promise<Job | null>;
   
   // Chats
   createChat(data: Omit<InsertChat, 'createdAt' | 'updatedAt'>): Promise<Chat>;
@@ -54,14 +54,14 @@ interface IStorage {
   getChatByJobId(jobId: number): Promise<Chat | null>;
   getUserChats(userId: number): Promise<Chat[]>;
   getChatsByUser(userId: number): Promise<Chat[]>;
-  addMessage(chatId: number, senderId: number, content: string): Promise<void>;
-  markMessagesAsRead(chatId: number, userId: number): Promise<void>;
+  addMessage(chatId: number, senderId: number, content: string): Promise<Chat | null>;
+  markMessagesAsRead(chatId: number, userId: number): Promise<boolean>;
   
   // Notifications
   createNotification(data: Omit<InsertNotification, 'createdAt'>): Promise<Notification>;
   getUserNotifications(userId: number, limit?: number): Promise<Notification[]>;
   getNotificationsByUser(userId: number, limit?: number): Promise<Notification[]>;
-  markNotificationAsRead(id: number): Promise<void>;
+  markNotificationAsRead(id: number): Promise<boolean>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
   
   // Ratings
@@ -214,8 +214,8 @@ class PostgreSQLStorage implements IStorage {
       .where(eq(jobs.id, id));
   }
 
-  async takeJob(jobId: number, carrierId: number): Promise<void> {
-    await db
+  async takeJob(jobId: number, carrierId: number): Promise<Job | null> {
+    const [updatedJob] = await db
       .update(jobs)
       .set({
         carrierId,
@@ -223,18 +223,24 @@ class PostgreSQLStorage implements IStorage {
         takenAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(jobs.id, jobId));
+      .where(eq(jobs.id, jobId))
+      .returning();
+    
+    return updatedJob || null;
   }
 
-  async completeJob(jobId: number): Promise<void> {
-    await db
+  async completeJob(jobId: number): Promise<Job | null> {
+    const [updatedJob] = await db
       .update(jobs)
       .set({
         status: 'completed',
         completedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(jobs.id, jobId));
+      .where(eq(jobs.id, jobId))
+      .returning();
+    
+    return updatedJob || null;
   }
 
   // Chats
@@ -269,17 +275,17 @@ class PostgreSQLStorage implements IStorage {
     return db
       .select()
       .from(chats)
-      .where(sql`${userId} = ANY(${chats.participants})`)
+      .where(sql`${chats.participants}::jsonb @> ${JSON.stringify([userId])}`)
       .orderBy(desc(chats.updatedAt));
   }
 
-  async addMessage(chatId: number, senderId: number, content: string): Promise<void> {
+  async addMessage(chatId: number, senderId: number, content: string): Promise<Chat | null> {
     const [chat] = await db
       .select()
       .from(chats)
       .where(eq(chats.id, chatId));
     
-    if (!chat) throw new Error('Chat not found');
+    if (!chat) return null;
     
     const newMessage = {
       senderId,
@@ -290,13 +296,16 @@ class PostgreSQLStorage implements IStorage {
     
     const updatedMessages = [...(chat.messages || []), newMessage];
     
-    await db
+    const [updatedChat] = await db
       .update(chats)
       .set({
         messages: updatedMessages,
         updatedAt: new Date(),
       })
-      .where(eq(chats.id, chatId));
+      .where(eq(chats.id, chatId))
+      .returning();
+    
+    return updatedChat || null;
   }
 
   async markMessagesAsRead(chatId: number, userId: number): Promise<void> {
