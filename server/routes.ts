@@ -632,5 +632,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin user management routes
+  app.get('/api/admin/users', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
+    try {
+      const { role, verified, hasDocuments, page = 1, limit = 20 } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
+
+      const users = await storage.getAllUsers({
+        role: role as string,
+        verified: verified === 'true' ? true : verified === 'false' ? false : undefined,
+        hasDocuments: hasDocuments === 'true' ? true : hasDocuments === 'false' ? false : undefined,
+        limit: Number(limit),
+        offset: offset
+      });
+
+      res.json({ users });
+    } catch (error: any) {
+      console.error('Admin users error:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  app.get('/api/admin/users/pending-documents', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
+    try {
+      const users = await storage.getUsersWithPendingDocuments();
+      res.json({ users });
+    } catch (error: any) {
+      console.error('Admin pending documents error:', error);
+      res.status(500).json({ message: 'Failed to fetch users with pending documents' });
+    }
+  });
+
+  app.post('/api/admin/users/:userId/verify-documents', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
+    try {
+      const { userId } = req.params;
+      const { approved, notes } = req.body;
+
+      await storage.verifyUserDocuments(Number(userId), req.user!.id, approved, notes);
+      
+      res.json({ 
+        message: approved ? 'Documents approved successfully' : 'Documents rejected',
+        approved 
+      });
+    } catch (error: any) {
+      console.error('Admin verify documents error:', error);
+      res.status(500).json({ message: 'Failed to process document verification' });
+    }
+  });
+
+  // Admin dispute management routes
+  app.get('/api/admin/disputes', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
+    try {
+      const { status, adminId, page = 1, limit = 20 } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
+
+      const disputes = await storage.getDisputes({
+        status: status as string,
+        adminId: adminId ? Number(adminId) : undefined,
+        limit: Number(limit),
+        offset: offset
+      });
+
+      res.json({ disputes });
+    } catch (error: any) {
+      console.error('Admin disputes error:', error);
+      res.status(500).json({ message: 'Failed to fetch disputes' });
+    }
+  });
+
+  app.post('/api/admin/disputes/:disputeId/assign', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
+    try {
+      const { disputeId } = req.params;
+
+      await storage.assignDisputeToAdmin(Number(disputeId), req.user!.id);
+      
+      res.json({ message: 'Dispute assigned successfully' });
+    } catch (error: any) {
+      console.error('Admin assign dispute error:', error);
+      res.status(500).json({ message: 'Failed to assign dispute' });
+    }
+  });
+
+  app.post('/api/admin/disputes/:disputeId/resolve', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
+    try {
+      const { disputeId } = req.params;
+      const { resolution } = req.body;
+
+      await storage.resolveDispute(Number(disputeId), resolution, req.user!.id);
+      
+      res.json({ message: 'Dispute resolved successfully' });
+    } catch (error: any) {
+      console.error('Admin resolve dispute error:', error);
+      res.status(500).json({ message: 'Failed to resolve dispute' });
+    }
+  });
+
+  // User dispute creation route
+  app.post('/api/disputes', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { jobId, reportedUserId, title, description, evidence } = req.body;
+
+      const dispute = await storage.createDispute({
+        jobId,
+        reporterId: req.user!.id,
+        reportedUserId,
+        title,
+        description,
+        evidence: evidence || []
+      });
+
+      res.status(201).json({ dispute });
+    } catch (error: any) {
+      console.error('Create dispute error:', error);
+      res.status(500).json({ message: 'Failed to create dispute' });
+    }
+  });
+
   return httpServer;
 }

@@ -1,17 +1,24 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, queryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/ui/navbar";
-import { Users, Package, DollarSign, AlertTriangle, TrendingUp, FileText, MessageSquare, Settings } from "lucide-react";
+import { Users, Package, DollarSign, AlertTriangle, TrendingUp, FileText, MessageSquare, Settings, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [userFilters, setUserFilters] = useState({ role: '', verified: '', hasDocuments: '' });
+  const [disputeFilters, setDisputeFilters] = useState({ status: '' });
 
   // Fetch admin dashboard data
   const { data: dashboardData, isLoading } = useQuery({
@@ -19,6 +26,90 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/admin/dashboard');
       return response.json();
+    }
+  });
+
+  // Fetch users data
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/admin/users', userFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (userFilters.role) params.append('role', userFilters.role);
+      if (userFilters.verified) params.append('verified', userFilters.verified);
+      if (userFilters.hasDocuments) params.append('hasDocuments', userFilters.hasDocuments);
+      const response = await apiRequest('GET', `/api/admin/users?${params}`);
+      return response.json();
+    }
+  });
+
+  // Fetch users with pending documents
+  const { data: pendingDocumentsData, isLoading: pendingLoading } = useQuery({
+    queryKey: ['/api/admin/users/pending-documents'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/admin/users/pending-documents');
+      return response.json();
+    }
+  });
+
+  // Fetch disputes data
+  const { data: disputesData, isLoading: disputesLoading } = useQuery({
+    queryKey: ['/api/admin/disputes', disputeFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (disputeFilters.status) params.append('status', disputeFilters.status);
+      const response = await apiRequest('GET', `/api/admin/disputes?${params}`);
+      return response.json();
+    }
+  });
+
+  // Document verification mutation
+  const verifyDocumentsMutation = useMutation({
+    mutationFn: async ({ userId, approved, notes }: { userId: number; approved: boolean; notes?: string }) => {
+      const response = await apiRequest('POST', `/api/admin/users/${userId}/verify-documents`, {
+        approved,
+        notes
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Document verification completed successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users/pending-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+    },
+    onError: () => {
+      toast({ title: "Failed to verify documents", variant: "destructive" });
+    }
+  });
+
+  // Assign dispute mutation
+  const assignDisputeMutation = useMutation({
+    mutationFn: async (disputeId: number) => {
+      const response = await apiRequest('POST', `/api/admin/disputes/${disputeId}/assign`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Dispute assigned successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/disputes'] });
+    },
+    onError: () => {
+      toast({ title: "Failed to assign dispute", variant: "destructive" });
+    }
+  });
+
+  // Resolve dispute mutation
+  const resolveDisputeMutation = useMutation({
+    mutationFn: async ({ disputeId, resolution }: { disputeId: number; resolution: string }) => {
+      const response = await apiRequest('POST', `/api/admin/disputes/${disputeId}/resolve`, {
+        resolution
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Dispute resolved successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/disputes'] });
+    },
+    onError: () => {
+      toast({ title: "Failed to resolve dispute", variant: "destructive" });
     }
   });
 
@@ -263,16 +354,77 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="mt-6" data-testid="users-content">
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>User Management</CardTitle>
+                  <div className="flex gap-2">
+                    <Select value={userFilters.role} onValueChange={(value) => setUserFilters({...userFilters, role: value})}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Roles</SelectItem>
+                        <SelectItem value="trucking_company">Trucking Companies</SelectItem>
+                        <SelectItem value="shipping_entity">Shipping Entities</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={userFilters.verified} onValueChange={(value) => setUserFilters({...userFilters, verified: value})}>
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Verification" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Users</SelectItem>
+                        <SelectItem value="true">Verified</SelectItem>
+                        <SelectItem value="false">Unverified</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">User Management</h3>
-                  <p className="text-muted-foreground">
-                    Manage user accounts, permissions, and verification status.
-                  </p>
-                </div>
+                {usersLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading users...</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Documents</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {usersData?.users?.map((user: any) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.companyName}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.role === 'trucking_company' ? 'default' : 'secondary'}>
+                              {user.role === 'trucking_company' ? 'Trucking' : 'Shipping'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={user.verified ? 'default' : 'destructive'}>
+                              {user.verified ? 'Verified' : 'Unverified'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {user.documents && user.documents.length > 0 ? (
+                              <Badge variant="secondary">{user.documents.length} files</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">No documents</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -280,19 +432,83 @@ export default function AdminDashboard() {
           <TabsContent value="verification" className="mt-6" data-testid="verification-content">
             <Card>
               <CardHeader>
-                <CardTitle>Document Verification</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Document Verification Queue
+                  {pendingDocumentsData?.users?.length > 0 && (
+                    <Badge variant="destructive">{pendingDocumentsData.users.length} pending</Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Document Verification Queue</h3>
-                  <p className="text-muted-foreground">
-                    Review and verify business licenses and permits submitted by trucking companies.
-                  </p>
-                  <Button className="mt-4" data-testid="review-documents">
-                    Review Pending Documents
-                  </Button>
-                </div>
+                {pendingLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading pending documents...</p>
+                  </div>
+                ) : pendingDocumentsData?.users?.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">All Caught Up!</h3>
+                    <p className="text-muted-foreground">
+                      No documents pending verification.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {pendingDocumentsData.users.map((user: any) => (
+                      <Card key={user.id} className="border-l-4 border-l-orange-500">
+                        <CardContent className="p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="font-semibold text-lg">{user.companyName}</h3>
+                              <p className="text-muted-foreground">{user.email}</p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Submitted: {new Date(user.updatedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge className="bg-orange-100 text-orange-800">Pending Review</Badge>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Uploaded Documents:</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {user.documents?.map((doc: any, index: number) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
+                                  <FileText className="h-4 w-4" />
+                                  <span className="text-sm">{doc.filename}</span>
+                                  <Button variant="ghost" size="sm" className="ml-auto">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => verifyDocumentsMutation.mutate({ userId: user.id, approved: true })}
+                              disabled={verifyDocumentsMutation.isPending}
+                              className="bg-green-600 hover:bg-green-700"
+                              data-testid={`approve-documents-${user.id}`}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                            <Button
+                              onClick={() => verifyDocumentsMutation.mutate({ userId: user.id, approved: false, notes: 'Documents did not meet verification requirements' })}
+                              disabled={verifyDocumentsMutation.isPending}
+                              variant="destructive"
+                              data-testid={`reject-documents-${user.id}`}
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -300,19 +516,110 @@ export default function AdminDashboard() {
           <TabsContent value="disputes" className="mt-6" data-testid="disputes-content">
             <Card>
               <CardHeader>
-                <CardTitle>Dispute Resolution</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Dispute Resolution
+                  </CardTitle>
+                  <Select value={disputeFilters.status} onValueChange={(value) => setDisputeFilters({...disputeFilters, status: value})}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Disputes</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_review">In Review</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Active Disputes</h3>
-                  <p className="text-muted-foreground">
-                    Mediate disputes between shipping entities and trucking companies.
-                  </p>
-                  <Button className="mt-4" data-testid="view-disputes">
-                    View Active Disputes
-                  </Button>
-                </div>
+                {disputesLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading disputes...</p>
+                  </div>
+                ) : disputesData?.disputes?.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Disputes Found</h3>
+                    <p className="text-muted-foreground">
+                      No disputes match your current filters.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {disputesData.disputes.map((dispute: any) => (
+                      <Card key={dispute.id} className={`border-l-4 ${
+                        dispute.status === 'open' ? 'border-l-red-500' :
+                        dispute.status === 'in_review' ? 'border-l-yellow-500' :
+                        dispute.status === 'resolved' ? 'border-l-green-500' :
+                        'border-l-gray-500'
+                      }`}>
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h3 className="font-semibold">{dispute.title}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Dispute #{dispute.id} • Job #{dispute.jobId}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Created: {new Date(dispute.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge variant={
+                              dispute.status === 'open' ? 'destructive' :
+                              dispute.status === 'in_review' ? 'default' :
+                              dispute.status === 'resolved' ? 'default' :
+                              'secondary'
+                            }>
+                              {dispute.status.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          </div>
+                          
+                          <p className="text-sm mb-3">{dispute.description}</p>
+                          
+                          {dispute.status === 'resolved' && dispute.resolution && (
+                            <div className="bg-green-50 p-3 rounded mb-3">
+                              <p className="text-sm font-medium text-green-800">Resolution:</p>
+                              <p className="text-sm text-green-700">{dispute.resolution}</p>
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            {dispute.status === 'open' && (
+                              <Button
+                                onClick={() => assignDisputeMutation.mutate(dispute.id)}
+                                disabled={assignDisputeMutation.isPending}
+                                data-testid={`assign-dispute-${dispute.id}`}
+                              >
+                                <Clock className="h-4 w-4 mr-2" />
+                                Assign to Me
+                              </Button>
+                            )}
+                            {dispute.status === 'in_review' && dispute.adminId === user?.id && (
+                              <Button
+                                onClick={() => {
+                                  const resolution = prompt('Enter resolution:');
+                                  if (resolution) {
+                                    resolveDisputeMutation.mutate({ disputeId: dispute.id, resolution });
+                                  }
+                                }}
+                                disabled={resolveDisputeMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
+                                data-testid={`resolve-dispute-${dispute.id}`}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Resolve Dispute
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

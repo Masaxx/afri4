@@ -5,13 +5,15 @@ import type {
   InsertChat,
   InsertNotification,
   InsertRating,
+  InsertDispute,
   User,
   Job,
   Chat,
   Notification,
-  Rating
+  Rating,
+  Dispute
 } from '@shared/schema';
-import { users, jobs, chats, notifications, ratings } from '@shared/schema';
+import { users, jobs, chats, notifications, ratings, disputes } from '@shared/schema';
 import bcrypt from 'bcryptjs';
 import { db } from './db';
 import { eq, and, or, desc, asc, count, sql } from 'drizzle-orm';
@@ -74,6 +76,30 @@ interface IStorage {
   getUserCount(role?: string): Promise<number>;
   getJobCount(status?: string): Promise<number>;
   getMonthlyRevenue(): Promise<number>;
+  
+  // Admin operations
+  getAllUsers(filters: {
+    role?: string;
+    verified?: boolean;
+    hasDocuments?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<User[]>;
+  getUsersWithPendingDocuments(): Promise<User[]>;
+  verifyUserDocuments(userId: number, adminId: number, approved: boolean, notes?: string): Promise<void>;
+  
+  // Dispute operations
+  createDispute(data: Omit<InsertDispute, 'createdAt' | 'updatedAt'>): Promise<Dispute>;
+  getDisputes(filters: {
+    status?: string;
+    adminId?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<Dispute[]>;
+  getDisputeById(id: number): Promise<Dispute | null>;
+  updateDispute(id: number, data: Partial<Omit<Dispute, 'id' | 'createdAt'>>): Promise<void>;
+  assignDisputeToAdmin(disputeId: number, adminId: number): Promise<void>;
+  resolveDispute(disputeId: number, resolution: string, adminId: number): Promise<void>;
 }
 
 class PostgreSQLStorage implements IStorage {
@@ -457,6 +483,150 @@ class PostgreSQLStorage implements IStorage {
   
   async getNotificationsByUser(userId: number, limit: number = 50): Promise<Notification[]> {
     return this.getUserNotifications(userId, limit);
+  }
+  
+  // Admin operations
+  async getAllUsers(filters: {
+    role?: string;
+    verified?: boolean;
+    hasDocuments?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<User[]> {
+    let query = db.select().from(users);
+    
+    const conditions = [];
+    if (filters.role) conditions.push(eq(users.role, filters.role as any));
+    if (filters.verified !== undefined) conditions.push(eq(users.verified, filters.verified));
+    if (filters.hasDocuments !== undefined) {
+      if (filters.hasDocuments) {
+        conditions.push(sql`${users.documents} IS NOT NULL AND ${users.documents} != '[]'`);
+      } else {
+        conditions.push(or(sql`${users.documents} IS NULL`, sql`${users.documents} = '[]'`));
+      }
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    query = query.orderBy(desc(users.createdAt));
+    
+    if (filters.limit) query = query.limit(filters.limit);
+    if (filters.offset) query = query.offset(filters.offset);
+    
+    return await query;
+  }
+  
+  async getUsersWithPendingDocuments(): Promise<User[]> {
+    return db.select()
+      .from(users)
+      .where(
+        and(
+          sql`${users.documents} IS NOT NULL`,
+          sql`${users.documents} != '[]'`,
+          eq(users.verified, false)
+        )
+      )
+      .orderBy(desc(users.createdAt));
+  }
+  
+  async verifyUserDocuments(userId: number, adminId: number, approved: boolean, notes?: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        verified: approved,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+    
+    // Create notification for user
+    await this.createNotification({
+      userId: userId,
+      type: approved ? 'job_match' : 'subscription_expiring',
+      title: approved ? 'Documents Verified' : 'Documents Rejected',
+      message: approved 
+        ? 'Your business documents have been verified and your account is now active.'
+        : `Your documents were rejected: ${notes || 'Please upload valid business documents.'}`,
+      data: { adminId, notes }
+    });
+  }
+  
+  // Dispute operations
+  async createDispute(data: Omit<InsertDispute, 'createdAt' | 'updatedAt'>): Promise<Dispute> {
+    const [dispute] = await db
+      .insert(disputes)
+      .values(data)
+      .returning();
+    
+    return dispute;
+  }
+  
+  async getDisputes(filters: {
+    status?: string;
+    adminId?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<Dispute[]> {
+    let query = db.select().from(disputes);
+    
+    const conditions = [];
+    if (filters.status) conditions.push(eq(disputes.status, filters.status as any));
+    if (filters.adminId) conditions.push(eq(disputes.adminId, filters.adminId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    query = query.orderBy(desc(disputes.createdAt));
+    
+    if (filters.limit) query = query.limit(filters.limit);
+    if (filters.offset) query = query.offset(filters.offset);
+    
+    return await query;
+  }
+  
+  async getDisputeById(id: number): Promise<Dispute | null> {
+    const [dispute] = await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, id));
+    
+    return dispute || null;
+  }
+  
+  async updateDispute(id: number, data: Partial<Omit<Dispute, 'id' | 'createdAt'>>): Promise<void> {
+    await db
+      .update(disputes)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(disputes.id, id));
+  }
+  
+  async assignDisputeToAdmin(disputeId: number, adminId: number): Promise<void> {
+    await db
+      .update(disputes)
+      .set({
+        adminId: adminId,
+        status: 'in_review',
+        updatedAt: new Date(),
+      })
+      .where(eq(disputes.id, disputeId));
+  }
+  
+  async resolveDispute(disputeId: number, resolution: string, adminId: number): Promise<void> {
+    await db
+      .update(disputes)
+      .set({
+        resolution: resolution,
+        status: 'resolved',
+        adminId: adminId,
+        resolvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(disputes.id, disputeId));
   }
 }
 

@@ -11,6 +11,7 @@ export const jobStatusEnum = pgEnum('job_status', ['available', 'taken', 'comple
 export const countryEnum = pgEnum('country', ['BWA', 'ZAF', 'NAM', 'ZWE', 'ZMB']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'inactive', 'trial']);
 export const notificationTypeEnum = pgEnum('notification_type', ['job_match', 'job_taken', 'job_completed', 'payment_confirmed', 'subscription_expiring']);
+export const disputeStatusEnum = pgEnum('dispute_status', ['open', 'in_review', 'resolved', 'closed']);
 
 // User roles
 export const UserRole = {
@@ -184,6 +185,27 @@ export const ratings = pgTable('ratings', {
   createdAt: timestamp('created_at').notNull().default(sql`now()`)
 });
 
+export const disputes = pgTable('disputes', {
+  id: serial('id').primaryKey(),
+  jobId: integer('job_id').notNull().references(() => jobs.id),
+  reporterId: integer('reporter_id').notNull().references(() => users.id),
+  reportedUserId: integer('reported_user_id').references(() => users.id),
+  adminId: integer('admin_id').references(() => users.id),
+  status: disputeStatusEnum('status').notNull().default('open'),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  evidence: json('evidence').$type<Array<{
+    type: 'document' | 'image' | 'message';
+    url: string;
+    description?: string;
+  }>>().default([]),
+  adminNotes: text('admin_notes'),
+  resolution: text('resolution'),
+  createdAt: timestamp('created_at').notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at').notNull().default(sql`now()`),
+  resolvedAt: timestamp('resolved_at')
+});
+
 // Drizzle schemas and types
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
@@ -195,6 +217,8 @@ export const insertNotificationSchema = createInsertSchema(notifications);
 export const selectNotificationSchema = createSelectSchema(notifications);
 export const insertRatingSchema = createInsertSchema(ratings);
 export const selectRatingSchema = createSelectSchema(ratings);
+export const insertDisputeSchema = createInsertSchema(disputes);
+export const selectDisputeSchema = createSelectSchema(disputes);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
@@ -206,6 +230,8 @@ export type InsertNotification = typeof notifications.$inferInsert;
 export type SelectNotification = typeof notifications.$inferSelect;
 export type InsertRating = typeof ratings.$inferInsert;
 export type SelectRating = typeof ratings.$inferSelect;
+export type InsertDispute = typeof disputes.$inferInsert;
+export type SelectDispute = typeof disputes.$inferSelect;
 
 // Legacy types for compatibility
 export type User = SelectUser;
@@ -213,6 +239,7 @@ export type Job = SelectJob;
 export type Chat = SelectChat;
 export type Notification = SelectNotification;
 export type Rating = SelectRating;
+export type Dispute = SelectDispute;
 
 // Login schemas
 export const loginSchema = z.object({
