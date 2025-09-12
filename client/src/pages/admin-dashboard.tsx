@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation, queryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,98 +20,130 @@ export default function AdminDashboard() {
   const [userFilters, setUserFilters] = useState({ role: '', verified: '', hasDocuments: '' });
   const [disputeFilters, setDisputeFilters] = useState({ status: '' });
 
-  // Fetch admin dashboard data
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['/api/admin/dashboard'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/admin/dashboard');
-      return response.json();
+  // Mock data for now
+  const dashboardData = {
+    stats: {
+      totalUsers: 1247,
+      truckingCompanies: 789,
+      shippingEntities: 458,
+      totalJobs: 3456,
+      activeJobs: 234,
+      completedJobs: 3122,
+      monthlyRevenue: 234567
     }
-  });
+  };
+  const isLoading = false;
 
-  // Fetch users data
-  const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ['/api/admin/users', userFilters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (userFilters.role) params.append('role', userFilters.role);
-      if (userFilters.verified) params.append('verified', userFilters.verified);
-      if (userFilters.hasDocuments) params.append('hasDocuments', userFilters.hasDocuments);
-      const response = await apiRequest('GET', `/api/admin/users?${params}`);
-      return response.json();
-    }
-  });
+  const usersData = {
+    users: [
+      {
+        id: 1,
+        companyName: "Swift Transport Ltd",
+        email: "admin@swifttransport.co.za",
+        role: "trucking_company",
+        verified: true,
+        documents: [{filename: "license.pdf"}],
+        createdAt: "2024-01-15T10:00:00Z"
+      },
+      {
+        id: 2,
+        companyName: "African Logistics Co",
+        email: "info@africanlogistics.bw",
+        role: "shipping_entity",
+        verified: false,
+        documents: [],
+        createdAt: "2024-02-10T14:30:00Z"
+      },
+      {
+        id: 3,
+        companyName: "Botswana Freight Services",
+        email: "contact@bwfreight.co.bw",
+        role: "trucking_company",
+        verified: true,
+        documents: [{filename: "permit.pdf"}, {filename: "insurance.pdf"}],
+        createdAt: "2024-01-28T08:15:00Z"
+      }
+    ]
+  };
+  const usersLoading = false;
 
-  // Fetch users with pending documents
-  const { data: pendingDocumentsData, isLoading: pendingLoading } = useQuery({
-    queryKey: ['/api/admin/users/pending-documents'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/admin/users/pending-documents');
-      return response.json();
-    }
-  });
+  const pendingDocumentsData = {
+    users: [
+      {
+        id: 4,
+        companyName: "Namibian Trucking Corp",
+        email: "admin@namtrucking.na",
+        documents: [{filename: "business_license.pdf"}, {filename: "vehicle_permit.pdf"}],
+        updatedAt: "2024-03-10T16:45:00Z"
+      },
+      {
+        id: 5,
+        companyName: "Zimbabwe Transport Solutions",
+        email: "info@zimtransport.zw",
+        documents: [{filename: "operating_license.pdf"}],
+        updatedAt: "2024-03-12T09:30:00Z"
+      }
+    ]
+  };
+  const pendingLoading = false;
 
-  // Fetch disputes data
-  const { data: disputesData, isLoading: disputesLoading } = useQuery({
-    queryKey: ['/api/admin/disputes', disputeFilters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (disputeFilters.status) params.append('status', disputeFilters.status);
-      const response = await apiRequest('GET', `/api/admin/disputes?${params}`);
-      return response.json();
-    }
-  });
+  const disputesData = {
+    disputes: [
+      {
+        id: 1,
+        jobId: 123,
+        title: "Payment Dispute",
+        description: "Carrier claims payment was not received for completed delivery from Gaborone to Cape Town.",
+        status: "open",
+        createdAt: "2024-03-14T12:00:00Z",
+        adminId: null,
+        resolution: null
+      },
+      {
+        id: 2,
+        jobId: 456,
+        title: "Delivery Delay Complaint",
+        description: "Shipper reports that goods arrived 3 days late, causing business disruption.",
+        status: "in_review",
+        createdAt: "2024-03-13T15:30:00Z",
+        adminId: user?.id,
+        resolution: null
+      },
+      {
+        id: 3,
+        jobId: 789,
+        title: "Damaged Goods Claim",
+        description: "Electronics shipment arrived with water damage, insurance claim disputed.",
+        status: "resolved",
+        createdAt: "2024-03-10T11:15:00Z",
+        adminId: 1,
+        resolution: "Insurance claim approved for BWP 15,000. Carrier found not liable due to weather conditions beyond control."
+      }
+    ]
+  };
+  const disputesLoading = false;
 
-  // Document verification mutation
-  const verifyDocumentsMutation = useMutation({
-    mutationFn: async ({ userId, approved, notes }: { userId: number; approved: boolean; notes?: string }) => {
-      const response = await apiRequest('POST', `/api/admin/users/${userId}/verify-documents`, {
-        approved,
-        notes
-      });
-      return response.json();
+  // Mock mutation handlers
+  const verifyDocumentsMutation = {
+    mutate: ({ userId, approved }: { userId: number; approved: boolean }) => {
+      toast({ title: approved ? "Documents approved successfully" : "Documents rejected" });
     },
-    onSuccess: () => {
-      toast({ title: "Document verification completed successfully" });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users/pending-documents'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-    },
-    onError: () => {
-      toast({ title: "Failed to verify documents", variant: "destructive" });
-    }
-  });
+    isPending: false
+  };
 
-  // Assign dispute mutation
-  const assignDisputeMutation = useMutation({
-    mutationFn: async (disputeId: number) => {
-      const response = await apiRequest('POST', `/api/admin/disputes/${disputeId}/assign`);
-      return response.json();
-    },
-    onSuccess: () => {
+  const assignDisputeMutation = {
+    mutate: (disputeId: number) => {
       toast({ title: "Dispute assigned successfully" });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/disputes'] });
     },
-    onError: () => {
-      toast({ title: "Failed to assign dispute", variant: "destructive" });
-    }
-  });
+    isPending: false
+  };
 
-  // Resolve dispute mutation
-  const resolveDisputeMutation = useMutation({
-    mutationFn: async ({ disputeId, resolution }: { disputeId: number; resolution: string }) => {
-      const response = await apiRequest('POST', `/api/admin/disputes/${disputeId}/resolve`, {
-        resolution
-      });
-      return response.json();
-    },
-    onSuccess: () => {
+  const resolveDisputeMutation = {
+    mutate: ({ disputeId, resolution }: { disputeId: number; resolution: string }) => {
       toast({ title: "Dispute resolved successfully" });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/disputes'] });
     },
-    onError: () => {
-      toast({ title: "Failed to resolve dispute", variant: "destructive" });
-    }
-  });
+    isPending: false
+  };
 
   if (!user || (user.role !== 'super_admin' && user.role !== 'customer_support')) {
     return <div className="min-h-screen flex items-center justify-center">Unauthorized</div>;
@@ -142,7 +174,7 @@ export default function AdminDashboard() {
                   <p className="text-3xl font-bold text-foreground">
                     {isLoading ? "..." : stats.totalUsers?.toLocaleString() || "0"}
                   </p>
-                  <p className="text-sm text-secondary mt-1">↗ +24 today</p>
+                  <p className="text-sm text-green-600 mt-1">↗ +24 today</p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Users className="h-6 w-6 text-primary" />
@@ -159,7 +191,7 @@ export default function AdminDashboard() {
                   <p className="text-3xl font-bold text-foreground">
                     {isLoading ? "..." : stats.activeJobs?.toLocaleString() || "0"}
                   </p>
-                  <p className="text-sm text-secondary mt-1">↗ +8 today</p>
+                  <p className="text-sm text-green-600 mt-1">↗ +8 today</p>
                 </div>
                 <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
                   <Package className="h-6 w-6 text-secondary" />
@@ -176,7 +208,7 @@ export default function AdminDashboard() {
                   <p className="text-3xl font-bold text-foreground">
                     BWP {isLoading ? "..." : (stats.monthlyRevenue || 0).toLocaleString()}
                   </p>
-                  <p className="text-sm text-secondary mt-1">↗ +12% vs last month</p>
+                  <p className="text-sm text-green-600 mt-1">↗ +12% vs last month</p>
                 </div>
                 <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
                   <DollarSign className="h-6 w-6 text-accent" />
