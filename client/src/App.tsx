@@ -54,7 +54,10 @@ function Router() {
           <Route path="/chat/:jobId?" component={Chat} />
           <Route path="/analytics" component={Analytics} />
           {(user.role === 'super_admin' || user.role === 'customer_support') && (
-            <Route path="/admin" component={AdminDashboard} />
+            <>
+              <Route path="/admin" component={AdminDashboard} />
+              <Route path="/admin-dashboard" component={AdminDashboard} />
+            </>
           )}
         </>
       )}
