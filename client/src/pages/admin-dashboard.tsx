@@ -17,8 +17,8 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
-  const [userFilters, setUserFilters] = useState({ role: '', verified: '', hasDocuments: '' });
-  const [disputeFilters, setDisputeFilters] = useState({ status: '' });
+  const [userFilters, setUserFilters] = useState({ role: 'all', verified: 'all', hasDocuments: 'all' });
+  const [disputeFilters, setDisputeFilters] = useState({ status: 'all' });
 
   // Mock data for now
   const dashboardData = {
@@ -394,7 +394,7 @@ export default function AdminDashboard() {
                         <SelectValue placeholder="Filter by role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Roles</SelectItem>
+                        <SelectItem value="all">All Roles</SelectItem>
                         <SelectItem value="trucking_company">Trucking Companies</SelectItem>
                         <SelectItem value="shipping_entity">Shipping Entities</SelectItem>
                       </SelectContent>
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
                         <SelectValue placeholder="Verification" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Users</SelectItem>
+                        <SelectItem value="all">All Users</SelectItem>
                         <SelectItem value="true">Verified</SelectItem>
                         <SelectItem value="false">Unverified</SelectItem>
                       </SelectContent>
@@ -527,7 +527,7 @@ export default function AdminDashboard() {
                               Approve
                             </Button>
                             <Button
-                              onClick={() => verifyDocumentsMutation.mutate({ userId: user.id, approved: false, notes: 'Documents did not meet verification requirements' })}
+                              onClick={() => verifyDocumentsMutation.mutate({ userId: user.id, approved: false })}
                               disabled={verifyDocumentsMutation.isPending}
                               variant="destructive"
                               data-testid={`reject-documents-${user.id}`}
@@ -558,7 +558,7 @@ export default function AdminDashboard() {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Disputes</SelectItem>
+                      <SelectItem value="all">All Disputes</SelectItem>
                       <SelectItem value="open">Open</SelectItem>
                       <SelectItem value="in_review">In Review</SelectItem>
                       <SelectItem value="resolved">Resolved</SelectItem>

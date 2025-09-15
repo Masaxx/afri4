@@ -22,11 +22,24 @@ export function useAuth() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Mock user for testing admin dashboard
+  const mockUser = {
+    id: 1,
+    email: "admin@loadlink.co.bw",
+    role: "super_admin",
+    companyName: "LoadLink Africa Admin",
+    contactPersonName: "Admin User",
+    subscriptionStatus: "active",
+    emailVerified: true
+  };
+
+  // Use mock data for now as requested
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['/api/auth/me'],
     retry: false,
-    select: (data: any) => data?.user,
+    select: (data: any) => data?.user || mockUser, // Fallback to mock user
     staleTime: 1000 * 60 * 5, // 5 minutes
+    queryFn: () => Promise.resolve({ user: mockUser }), // Return mock data
   });
 
   const loginMutation = useMutation({
