@@ -22,24 +22,12 @@ export function useAuth() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Mock user for testing admin dashboard
-  const mockUser = {
-    id: 1,
-    email: "admin@loadlink.co.bw",
-    role: "super_admin",
-    companyName: "LoadLink Africa Admin",
-    contactPersonName: "Admin User",
-    subscriptionStatus: "active",
-    emailVerified: true
-  };
-
-  // Use mock data for now as requested
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['/api/auth/me'],
     retry: false,
-    select: (data: any) => data?.user || mockUser, // Fallback to mock user
+    enabled: Boolean(localStorage.getItem('auth_token')), // Re-enable session hydration
+    select: (data: any) => data?.user,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    queryFn: () => Promise.resolve({ user: mockUser }), // Return mock data
   });
 
   const loginMutation = useMutation({
@@ -50,6 +38,7 @@ export function useAuth() {
     onSuccess: (data: AuthResponse) => {
       localStorage.setItem('auth_token', data.token);
       queryClient.setQueryData(['/api/auth/me'], { user: data.user });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: "Success",
         description: data.message,
@@ -75,6 +64,7 @@ export function useAuth() {
     onSuccess: (data: AuthResponse) => {
       localStorage.setItem('auth_token', data.token);
       queryClient.setQueryData(['/api/auth/me'], { user: data.user });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: "Success",
         description: data.message,
@@ -91,7 +81,8 @@ export function useAuth() {
 
   const logout = () => {
     localStorage.removeItem('auth_token');
-    queryClient.clear();
+    queryClient.setQueryData(['/api/auth/me'], null);
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
     window.location.href = '/';
   };
 
