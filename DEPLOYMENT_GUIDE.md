@@ -42,6 +42,7 @@ JWT_SECRET=<your-jwt-secret-32-chars>
 STRIPE_SECRET_KEY=<your-stripe-secret-key>
 FRONTEND_URL=<your-vercel-domain>
 SESSION_SECRET=<your-session-secret>
+VERCEL_PROJECT_NAME=<your-project-name>
 ```
 
 **Optional Email Variables:**

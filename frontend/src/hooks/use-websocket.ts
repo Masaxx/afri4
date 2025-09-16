@@ -15,8 +15,9 @@ export function useWebSocket() {
     const token = localStorage.getItem('auth_token');
     if (!token) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}`;
+    // Use backend URL for WebSocket connection
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
 
     socketRef.current = io(wsUrl, {
       path: '/ws',

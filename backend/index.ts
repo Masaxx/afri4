@@ -6,7 +6,26 @@ const app = express();
 
 // CORS configuration for frontend deployment
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:3000', // Local development
+      'https://localhost:3000', // Local development with HTTPS
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // Allow Vercel preview deployments for this project only
+    const projectName = process.env.VERCEL_PROJECT_NAME || 'loadlink-africa';
+    if (origin.includes(`${projectName}.vercel.app`)) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -31,15 +50,9 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
+      // Only log basic request metadata in production, never response bodies
+      const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      
       console.log(`${new Date().toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
