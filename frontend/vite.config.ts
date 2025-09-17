@@ -48,14 +48,5 @@ export default defineConfig({
     'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:5000')
   },
   // Ensure proper base path for deployment
-  base: './',
-  css: {
-    // Ensure PostCSS processes Tailwind correctly
-    postcss: {
-      plugins: [
-        require('tailwindcss'),
-        require('autoprefixer'),
-      ]
-    }
-  }
+  base: './'
 });
