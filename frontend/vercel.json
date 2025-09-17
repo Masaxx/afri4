@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "vite", 
+  "framework": "vite",
   "rewrites": [
     {
       "source": "/(.*)",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "source": "/**/*.css",
+      "source": "/(.*)\\.css$",
       "headers": [
         {
           "key": "Content-Type",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "source": "/**/*.js",
+      "source": "/(.*)\\.js$",
       "headers": [
         {
           "key": "Content-Type",
