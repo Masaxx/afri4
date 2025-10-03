@@ -6,10 +6,10 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
-import { storage } from "./storage";
-import { WebSocketService } from "./services/services/websocket";
-import { emailService } from "./services/services/email";
-import { authenticateToken, requireRole, requireSubscription, AuthRequest } from "./middleware/middleware/auth";
+import { storage } from "./storage.js";
+import { WebSocketService } from "./services/services/websocket.js";
+import { emailService } from "./services/services/email.js";
+import { authenticateToken, requireRole, requireSubscription, AuthRequest } from "./middleware/middleware/auth.js";
 import { 
   loginSchema, 
   registerTruckingSchema, 
@@ -17,7 +17,7 @@ import {
   insertJobSchema,
   UserRole,
   JobStatus 
-} from "./shared/schema";
+} from "./shared/schema.js";
 import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';

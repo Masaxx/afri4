@@ -1,0 +1,75 @@
+2025-10-03T15:31:23.071489036Z   Type '(chatId: number, userId: number) => Promise<void>' is not assignable to type '(chatId: number, userId: number) => Promise<boolean>'.
+2025-10-03T15:31:23.071492077Z     Type 'Promise<void>' is not assignable to type 'Promise<boolean>'.
+2025-10-03T15:31:23.071494837Z       Type 'void' is not assignable to type 'boolean'.
+2025-10-03T15:31:23.071501317Z storage.ts(353,9): error TS2353: Object literal may only specify known properties, and 'messages' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; participants?: SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | number[]; }'.
+2025-10-03T15:31:23.071504208Z storage.ts(378,9): error TS2416: Property 'markNotificationAsRead' in type 'PostgreSQLStorage' is not assignable to the same property in base type 'IStorage'.
+2025-10-03T15:31:23.071507208Z   Type '(id: number) => Promise<void>' is not assignable to type '(id: number) => Promise<boolean>'.
+2025-10-03T15:31:23.071509978Z     Type 'Promise<void>' is not assignable to type 'Promise<boolean>'.
+2025-10-03T15:31:23.071512468Z       Type 'void' is not assignable to type 'boolean'.
+2025-10-03T15:31:23.071518089Z storage.ts(381,14): error TS2353: Object literal may only specify known properties, and 'read' does not exist in type '{ userId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; type?: "job_match" | "job_taken" | ... 4 more ... | PgColumn<...>; title?: string | ... 1 more ... | PgColumn<...>; message?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-03T15:31:23.071549471Z storage.ts(388,14): error TS2353: Object literal may only specify known properties, and 'read' does not exist in type '{ userId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; type?: "job_match" | "job_taken" | ... 4 more ... | PgColumn<...>; title?: string | ... 1 more ... | PgColumn<...>; message?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-03T15:31:23.071562352Z storage.ts(500,66): error TS2339: Property 'verified' does not exist on type 'PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<...>;...'.
+2025-10-03T15:31:23.071572713Z storage.ts(513,5): error TS2740: Type 'Omit<PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColum...' is missing the following properties from type 'PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<......': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-03T15:31:23.071578874Z storage.ts(515,24): error TS2740: Type 'Omit<PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColum...' is missing the following properties from type 'PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<......': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-03T15:31:23.071597955Z storage.ts(516,25): error TS2740: Type 'Omit<PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColum...' is missing the following properties from type 'PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<......': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-03T15:31:23.071604785Z storage.ts(528,20): error TS2339: Property 'verified' does not exist on type 'PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<...>;...'.
+2025-10-03T15:31:23.071610876Z storage.ts(538,9): error TS2353: Object literal may only specify known properties, and 'verified' does not exist in type '{ role?: "trucking_company" | "shipping_entity" | "super_admin" | "customer_support" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 4 more ...; physicalAddress?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-03T15:31:23.071615446Z storage.ts(551,7): error TS2353: Object literal may only specify known properties, and 'data' does not exist in type 'Omit<{ userId: number; type: "job_match" | "job_taken" | "job_completed" | "payment_confirmed" | "subscription_expiring"; title: string; message: string; }, "createdAt">'.
+2025-10-03T15:31:23.07165468Z storage.ts(581,5): error TS2740: Type 'Omit<PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgColumn<...>; }, ... 5 ...' is missing the following properties from type 'PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgCol...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-03T15:31:23.07165774Z storage.ts(583,24): error TS2740: Type 'Omit<PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgColumn<...>; }, ... 5 ...' is missing the following properties from type 'PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgCol...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-03T15:31:23.071667881Z storage.ts(584,25): error TS2740: Type 'Omit<PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgColumn<...>; }, ... 5 ...' is missing the following properties from type 'PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgCol...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-03T15:31:23.071673551Z storage.ts(603,9): error TS2353: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; reporterId?: number | ... 1 more ... | PgColumn<...>; description?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-03T15:31:23.071677791Z storage.ts(612,9): error TS2353: Object literal may only specify known properties, and 'adminId' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; reporterId?: number | ... 1 more ... | PgColumn<...>; description?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-03T15:31:23.071681562Z storage.ts(623,9): error TS2353: Object literal may only specify known properties, and 'resolution' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; reporterId?: number | ... 1 more ... | PgColumn<...>; description?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-03T15:31:25.415731663Z ==> Uploading build...
+2025-10-03T15:31:30.283270183Z ==> Uploaded in 3.4s. Compression took 1.4s
+2025-10-03T15:31:30.302862491Z ==> Build successful 🎉
+2025-10-03T15:31:32.737993858Z ==> Deploying...
+2025-10-03T15:31:44.74960748Z ==> Running 'cd backend && npm start'
+2025-10-03T15:31:45.74748116Z 
+2025-10-03T15:31:45.747524231Z > loadlink-africa-backend@1.0.0 start
+2025-10-03T15:31:45.747528371Z > NODE_ENV=production node dist/index.js
+2025-10-03T15:31:45.747530951Z 
+2025-10-03T15:31:46.04471347Z node:internal/modules/esm/resolve:275
+2025-10-03T15:31:46.044739001Z     throw new ERR_MODULE_NOT_FOUND(
+2025-10-03T15:31:46.044743851Z           ^
+2025-10-03T15:31:46.044748321Z 
+2025-10-03T15:31:46.044753591Z Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/opt/render/project/src/backend/dist/routes' imported from /opt/render/project/src/backend/dist/index.js
+2025-10-03T15:31:46.044759471Z     at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+2025-10-03T15:31:46.044764431Z     at moduleResolve (node:internal/modules/esm/resolve:860:10)
+2025-10-03T15:31:46.044768321Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-10-03T15:31:46.044772541Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-10-03T15:31:46.044777061Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-10-03T15:31:46.044781341Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-10-03T15:31:46.044786442Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-10-03T15:31:46.044790662Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-10-03T15:31:46.044795022Z   code: 'ERR_MODULE_NOT_FOUND',
+2025-10-03T15:31:46.044799212Z   url: 'file:///opt/render/project/src/backend/dist/routes'
+2025-10-03T15:31:46.044803582Z }
+2025-10-03T15:31:46.044807662Z 
+2025-10-03T15:31:46.044811792Z Node.js v22.16.0
+2025-10-03T15:31:46.698439397Z ==> Exited with status 1
+2025-10-03T15:31:46.714456505Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2025-10-03T15:31:51.064319598Z ==> Running 'cd backend && npm start'
+2025-10-03T15:31:51.962994832Z 
+2025-10-03T15:31:51.963016423Z > loadlink-africa-backend@1.0.0 start
+2025-10-03T15:31:51.963020333Z > NODE_ENV=production node dist/index.js
+2025-10-03T15:31:51.963022513Z 
+2025-10-03T15:31:52.257938092Z node:internal/modules/esm/resolve:275
+2025-10-03T15:31:52.257958662Z     throw new ERR_MODULE_NOT_FOUND(
+2025-10-03T15:31:52.257962302Z           ^
+2025-10-03T15:31:52.257965112Z 
+2025-10-03T15:31:52.257968342Z Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/opt/render/project/src/backend/dist/routes' imported from /opt/render/project/src/backend/dist/index.js
+2025-10-03T15:31:52.257973382Z     at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+2025-10-03T15:31:52.257976632Z     at moduleResolve (node:internal/modules/esm/resolve:860:10)
+2025-10-03T15:31:52.257978962Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-10-03T15:31:52.257981342Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-10-03T15:31:52.257983902Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-10-03T15:31:52.257986822Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-10-03T15:31:52.257990263Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-10-03T15:31:52.257992883Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-10-03T15:31:52.257996103Z   code: 'ERR_MODULE_NOT_FOUND',
+2025-10-03T15:31:52.257999443Z   url: 'file:///opt/render/project/src/backend/dist/routes'
+2025-10-03T15:31:52.258002113Z }
+2025-10-03T15:31:52.258004643Z 
+2025-10-03T15:31:52.258007063Z Node.js v22.16.0

@@ -12,10 +12,10 @@ import type {
   Notification,
   Rating,
   Dispute
-} from './shared/schema';
-import { users, jobs, chats, notifications, ratings, disputes } from './shared/schema';
+} from './shared/schema.js';
+import { users, jobs, chats, notifications, ratings, disputes } from './shared/schema.js';
 import bcrypt from 'bcryptjs';
-import { db } from './db';
+import { db } from './db.js';
 import { eq, and, or, desc, asc, count, sql } from 'drizzle-orm';
 
 interface IStorage {
