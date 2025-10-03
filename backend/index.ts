@@ -14,12 +14,20 @@ const corsOptions = {
       'https://afri4-7fb5.vercel.app', // Production frontend
     ];
     
+    console.log(`[CORS DEBUG] Incoming request from origin: ${origin || 'NO ORIGIN'}`);
+    console.log(`[CORS DEBUG] Allowed origins:`, allowedOrigins);
+    
     // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('[CORS DEBUG] Request with no origin - ALLOWED');
+      return callback(null, true);
+    }
     
     if (allowedOrigins.includes(origin)) {
+      console.log('[CORS DEBUG] Origin matched - ALLOWED');
       callback(null, true);
     } else {
+      console.log('[CORS DEBUG] Origin not in allowlist - BLOCKED');
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -38,6 +46,18 @@ app.use((req, res, next) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
+  // Log incoming request details
+  if (path.startsWith("/api")) {
+    console.log(`\n[REQUEST] ${req.method} ${path}`);
+    console.log(`[REQUEST] Headers:`, JSON.stringify(req.headers, null, 2));
+    if (req.body && Object.keys(req.body).length > 0) {
+      console.log(`[REQUEST] Body:`, JSON.stringify(req.body, null, 2));
+    }
+    if (req.query && Object.keys(req.query).length > 0) {
+      console.log(`[REQUEST] Query:`, JSON.stringify(req.query, null, 2));
+    }
+  }
+
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
@@ -47,7 +67,6 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      // Only log basic request metadata in production, never response bodies
       const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       
       console.log(`${new Date().toLocaleTimeString("en-US", {
@@ -56,6 +75,12 @@ app.use((req, res, next) => {
         second: "2-digit",
         hour12: true,
       })} [express] ${logLine}`);
+      
+      // Log response for debugging
+      if (capturedJsonResponse) {
+        console.log(`[RESPONSE] Status: ${res.statusCode}`);
+        console.log(`[RESPONSE] Body:`, JSON.stringify(capturedJsonResponse, null, 2));
+      }
     }
   });
 
@@ -68,6 +93,13 @@ app.use((req, res, next) => {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+
+    console.error('[ERROR] ============================================');
+    console.error('[ERROR] Status:', status);
+    console.error('[ERROR] Message:', message);
+    console.error('[ERROR] Stack:', err.stack);
+    console.error('[ERROR] Full error:', JSON.stringify(err, null, 2));
+    console.error('[ERROR] ============================================');
 
     res.status(status).json({ message });
     throw err;
@@ -85,6 +117,14 @@ app.use((req, res, next) => {
 
   // Start server
   const port = parseInt(process.env.PORT || '5000', 10);
+  
+  console.log('\n[SERVER STARTUP] ===================================');
+  console.log('[SERVER STARTUP] Environment:', process.env.NODE_ENV || 'development');
+  console.log('[SERVER STARTUP] Frontend URL:', process.env.FRONTEND_URL || 'not set');
+  console.log('[SERVER STARTUP] Port:', port);
+  console.log('[SERVER STARTUP] Host: 0.0.0.0');
+  console.log('[SERVER STARTUP] ===================================\n');
+  
   server.listen({
     port,
     host: "0.0.0.0",
@@ -96,5 +136,6 @@ app.use((req, res, next) => {
       second: "2-digit",
       hour12: true,
     })} [express] serving on port ${port}`);
+    console.log('[SERVER] ✓ Server successfully started and listening for requests\n');
   });
 })();
