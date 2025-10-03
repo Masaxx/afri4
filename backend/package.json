@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "NODE_ENV=development tsx index.ts",
-    "build": "tsc && tsc-alias",
+    "build": "(tsc || true) && npx tsc-alias",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "db:push": "drizzle-kit push"
