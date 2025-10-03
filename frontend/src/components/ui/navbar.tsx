@@ -21,10 +21,17 @@ export default function Navbar() {
       // Navigate to home first, then scroll after a short delay
       window.location.href = '/#pricing';
     } else {
-      // Already on home page, just scroll to pricing section
+      // Already on home page, scroll to pricing section with offset for navbar
       const pricingSection = document.getElementById('pricing');
       if (pricingSection) {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
+        const navbarHeight = 64; // Height of navbar in pixels
+        const elementPosition = pricingSection.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - navbarHeight;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
       }
     }
   };
