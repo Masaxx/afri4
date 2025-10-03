@@ -56,18 +56,16 @@ export default function Register() {
   const [, navigate] = useLocation();
   const { register, isRegisterLoading } = useAuth();
   
-  // Get the type from URL parameter (e.g., /register?type=shipping)
-  const urlParams = new URLSearchParams(window.location.search);
-  const typeParam = urlParams.get('type');
+  const [activeTab, setActiveTab] = useState("trucking");
   
-  const [activeTab, setActiveTab] = useState(typeParam === "shipping" ? "shipping" : "trucking");
-  
-  // Update active tab when URL parameter changes
+  // Update active tab based on URL parameter
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
-    if (typeParam === "shipping" || typeParam === "trucking") {
-      setActiveTab(typeParam);
+    if (typeParam === "shipping") {
+      setActiveTab("shipping");
+    } else if (typeParam === "trucking") {
+      setActiveTab("trucking");
     }
   }, []);
   
