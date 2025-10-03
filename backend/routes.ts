@@ -7,9 +7,9 @@ import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
 import { storage } from "./storage";
-import { WebSocketService } from "./services/websocket";
-import { emailService } from "./services/email";
-import { authenticateToken, requireRole, requireSubscription, AuthRequest } from "./middleware/auth";
+import { WebSocketService } from "./services/services/websocket";
+import { emailService } from "./services/services/email";
+import { authenticateToken, requireRole, requireSubscription, AuthRequest } from "./middleware/middleware/auth";
 import { 
   loginSchema, 
   registerTruckingSchema, 
