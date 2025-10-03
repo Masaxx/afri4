@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,21 @@ type ShippingFormData = z.infer<typeof shippingSchema>;
 export default function Register() {
   const [, navigate] = useLocation();
   const { register, isRegisterLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState("trucking");
+  
+  // Get the type from URL parameter (e.g., /register?type=shipping)
+  const urlParams = new URLSearchParams(window.location.search);
+  const typeParam = urlParams.get('type');
+  
+  const [activeTab, setActiveTab] = useState(typeParam === "shipping" ? "shipping" : "trucking");
+  
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam === "shipping" || typeParam === "trucking") {
+      setActiveTab(typeParam);
+    }
+  }, []);
   
   const truckingForm = useForm<TruckingFormData>({
     resolver: zodResolver(truckingSchema),

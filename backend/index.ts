@@ -11,14 +11,11 @@ const corsOptions = {
       process.env.FRONTEND_URL || 'http://localhost:3000',
       'http://localhost:3000', // Local development
       'https://localhost:3000', // Local development with HTTPS
+      'https://afri4-7fb5.vercel.app', // Production frontend
     ];
     
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    
-    // Allow Vercel preview deployments for this project only
-    const projectName = process.env.VERCEL_PROJECT_NAME || 'loadlink-africa';
-    if (origin.includes(`${projectName}.vercel.app`)) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);

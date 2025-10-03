@@ -1,0 +1,54 @@
+index-BYlLauwn.js:20 Files uploaded: [File]
+/register?type=shipping:1  Access to fetch at 'https://afri4.onrender.com/api/auth/register/trucking' from origin 'https://afri4-7fb5.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-BYlLauwn.js:1   POST https://afri4.onrender.com/api/auth/register/trucking net::ERR_FAILED
+Vr @ index-BYlLauwn.js:1
+mutationFn @ index-BYlLauwn.js:20
+fn @ index-BYlLauwn.js:1
+u @ index-BYlLauwn.js:1
+start @ index-BYlLauwn.js:1
+execute @ index-BYlLauwn.js:1
+await in execute
+mutate @ index-BYlLauwn.js:1
+(anonymous) @ index-BYlLauwn.js:20
+(anonymous) @ index-BYlLauwn.js:20
+await in (anonymous)
+En @ vendor-CTsL6FwB.js:20
+Tn @ vendor-CTsL6FwB.js:20
+(anonymous) @ vendor-CTsL6FwB.js:20
+Cl @ vendor-CTsL6FwB.js:20
+_l @ vendor-CTsL6FwB.js:20
+(anonymous) @ vendor-CTsL6FwB.js:20
+Gs @ vendor-CTsL6FwB.js:20
+kn @ vendor-CTsL6FwB.js:20
+Rl @ vendor-CTsL6FwB.js:20
+Dt @ vendor-CTsL6FwB.js:20
+Ot @ vendor-CTsL6FwB.js:20
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+/register?type=shipping:1  Access to fetch at 'https://afri4.onrender.com/api/auth/register/trucking' from origin 'https://afri4-7fb5.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-BYlLauwn.js:1   POST https://afri4.onrender.com/api/auth/register/trucking net::ERR_FAILED
+Vr @ index-BYlLauwn.js:1
+mutationFn @ index-BYlLauwn.js:20
+fn @ index-BYlLauwn.js:1
+u @ index-BYlLauwn.js:1
+start @ index-BYlLauwn.js:1
+execute @ index-BYlLauwn.js:1
+await in execute
+mutate @ index-BYlLauwn.js:1
+(anonymous) @ index-BYlLauwn.js:20
+(anonymous) @ index-BYlLauwn.js:20
+await in (anonymous)
+En @ vendor-CTsL6FwB.js:20
+Tn @ vendor-CTsL6FwB.js:20
+(anonymous) @ vendor-CTsL6FwB.js:20
+Cl @ vendor-CTsL6FwB.js:20
+_l @ vendor-CTsL6FwB.js:20
+(anonymous) @ vendor-CTsL6FwB.js:20
+Gs @ vendor-CTsL6FwB.js:20
+kn @ vendor-CTsL6FwB.js:20
+Rl @ vendor-CTsL6FwB.js:20
+Dt @ vendor-CTsL6FwB.js:20
+Ot @ vendor-CTsL6FwB.js:20

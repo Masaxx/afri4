@@ -14,9 +14,24 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
 
+  const handlePricingClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (location !== '/') {
+      // Navigate to home first, then scroll after a short delay
+      window.location.href = '/#pricing';
+    } else {
+      // Already on home page, just scroll to pricing section
+      const pricingSection = document.getElementById('pricing');
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Pricing', href: '/#pricing' },
+    { name: 'Pricing', href: '/#pricing', onClick: handlePricingClick },
     { name: 'FAQ', href: '/faq' },
     { name: 'Resources', href: '/resources' },
   ];
@@ -47,14 +62,26 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                data-testid={`nav-link-${item.name.toLowerCase()}`}
-              >
-                {item.name}
-              </Link>
+              item.onClick ? (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  onClick={item.onClick}
+                  className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  data-testid={`nav-link-${item.name.toLowerCase()}`}
+                >
+                  {item.name}
+                </a>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid={`nav-link-${item.name.toLowerCase()}`}
+                >
+                  {item.name}
+                </Link>
+              )
             ))}
             
             {user ? (
@@ -127,14 +154,26 @@ export default function Navbar() {
               <SheetContent side="right" className="w-80" data-testid="mobile-menu">
                 <div className="flex flex-col space-y-4 mt-8">
                   {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-foreground hover:text-primary transition-colors text-lg"
-                      data-testid={`mobile-nav-${item.name.toLowerCase()}`}
-                    >
-                      {item.name}
-                    </Link>
+                    item.onClick ? (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        onClick={item.onClick}
+                        className="text-foreground hover:text-primary transition-colors text-lg cursor-pointer"
+                        data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                      >
+                        {item.name}
+                      </a>
+                    ) : (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="text-foreground hover:text-primary transition-colors text-lg"
+                        data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                      >
+                        {item.name}
+                      </Link>
+                    )
                   ))}
                   
                   {user ? (
