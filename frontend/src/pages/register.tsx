@@ -82,19 +82,37 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const cargoTypeOptions = [
-    { value: "general", label: "General" },
-    { value: "refrigerated", label: "Refrigerated" },
-    { value: "hazardous", label: "Hazardous" },
-    { value: "bulk", label: "Bulk" },
-    { value: "containers", label: "Containers" },
+    { value: "general", label: "General Cargo" },
+    { value: "refrigerated", label: "Refrigerated Goods" },
+    { value: "hazardous", label: "Hazardous Materials" },
+    { value: "bulk", label: "Bulk Cargo" },
+    { value: "containers", label: "Containers (20ft/40ft)" },
+    { value: "livestock", label: "Livestock" },
+    { value: "agricultural", label: "Agricultural Products" },
+    { value: "mining", label: "Mining Equipment & Minerals" },
+    { value: "construction", label: "Construction Materials" },
+    { value: "vehicles", label: "Vehicles & Machinery" },
+    { value: "electronics", label: "Electronics" },
+    { value: "textiles", label: "Textiles & Clothing" },
+    { value: "pharmaceuticals", label: "Pharmaceuticals" },
+    { value: "perishables", label: "Perishable Goods" },
+    { value: "oversized", label: "Oversized/Heavy Machinery" },
+    { value: "liquids", label: "Liquids/Tanker" },
   ];
 
   const countries = [
+    { value: "AGO", label: "Angola" },
     { value: "BWA", label: "Botswana" },
-    { value: "ZAF", label: "South Africa" },
+    { value: "COD", label: "Democratic Republic of Congo" },
+    { value: "SWZ", label: "Eswatini" },
+    { value: "LSO", label: "Lesotho" },
+    { value: "MWI", label: "Malawi" },
+    { value: "MOZ", label: "Mozambique" },
     { value: "NAM", label: "Namibia" },
-    { value: "ZWE", label: "Zimbabwe" },
+    { value: "ZAF", label: "South Africa" },
+    { value: "TZA", label: "Tanzania" },
     { value: "ZMB", label: "Zambia" },
+    { value: "ZWE", label: "Zimbabwe" },
   ];
 
   const handleCargoTypeChange = (type: string, checked: boolean) => {
