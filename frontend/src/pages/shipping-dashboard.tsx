@@ -31,8 +31,6 @@ interface Job {
   pickupCountry: string;
   deliveryCountry: string;
   industry: string;
-  paymentAmount: number;
-  paymentTerms: string;
   status: string;
   createdAt: string;
   pickupDate: string;
@@ -53,8 +51,6 @@ const jobSchema = z.object({
   deliveryCountry: z.string().min(1, "Delivery country is required"),
   pickupDate: z.string().min(1, "Pickup date is required"),
   deliveryDeadline: z.string().min(1, "Delivery deadline is required"),
-  paymentAmount: z.number().min(1, "Payment amount must be greater than 0"),
-  paymentTerms: z.string().min(1, "Payment terms are required"),
   specialHandling: z.string().optional(),
   insuranceRequired: z.boolean().default(false),
   notes: z.string().optional(),
@@ -359,41 +355,10 @@ export default function ShippingDashboard() {
                       </div>
                     </div>
 
-                    {/* Payment Information */}
+                    {/* Requirements */}
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Payment & Requirements</h3>
+                      <h3 className="text-lg font-semibold mb-4">Requirements</h3>
                       <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="paymentAmount">Payment Amount (BWP)</Label>
-                          <Input
-                            id="paymentAmount"
-                            type="number"
-                            {...form.register("paymentAmount", { valueAsNumber: true })}
-                            data-testid="input-payment-amount"
-                          />
-                          {form.formState.errors.paymentAmount && (
-                            <p className="text-destructive text-sm mt-1">{form.formState.errors.paymentAmount.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <Label htmlFor="paymentTerms">Payment Terms</Label>
-                          <Select onValueChange={(value) => form.setValue("paymentTerms", value)}>
-                            <SelectTrigger data-testid="select-payment-terms">
-                              <SelectValue placeholder="Select payment terms" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pay_on_delivery">Pay on delivery</SelectItem>
-                              <SelectItem value="50_50">50% upfront, 50% on delivery</SelectItem>
-                              <SelectItem value="full_upfront">Full payment upfront</SelectItem>
-                              <SelectItem value="net_30">Net 30 days</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {form.formState.errors.paymentTerms && (
-                            <p className="text-destructive text-sm mt-1">{form.formState.errors.paymentTerms.message}</p>
-                          )}
-                        </div>
-
                         <div>
                           <Label htmlFor="specialHandling">Special Handling Requirements</Label>
                           <Textarea
