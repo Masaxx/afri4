@@ -17,9 +17,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
+
 const truckingSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
   contactPersonName: z.string().min(1, "Contact person name is required"),
   companyName: z.string().min(1, "Company name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
@@ -32,7 +40,7 @@ const truckingSchema = z.object({
 
 const shippingSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
   contactPersonName: z.string().min(1, "Contact person name is required"),
   companyName: z.string().min(1, "Company/Individual name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
