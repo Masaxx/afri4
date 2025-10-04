@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { storage } from '../../storage.js';
-import { User, UserRole } from '@shared/schema';
+import { User, UserRole } from '../../shared/schema.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'dev-secret-key-change-in-production';
 
