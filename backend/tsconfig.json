@@ -18,7 +18,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
-    "noEmitOnError": false,
+    "noEmitOnError": true,
     "outDir": "./dist",
     "rootDir": "./",
     "sourceMap": true,
@@ -29,13 +29,11 @@
     }
   },
   "include": [
-    "**/*.ts",
-    "shared/**/*.ts"
+    "**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "drizzle.config.ts",
     "drizzle"
   ]
 }
