@@ -102,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: UserRole.TRUCKING_COMPANY,
         emailVerificationToken: crypto.randomBytes(32).toString('hex'),
         subscriptionStatus: 'trial'
-      });
+      } as any);
 
       // Send verification email
       if (user.emailVerificationToken) {
@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: UserRole.SHIPPING_ENTITY,
         emailVerificationToken: crypto.randomBytes(32).toString('hex'),
         subscriptionStatus: 'active' // Shipping entities get free access
-      });
+      } as any);
 
       // Send verification email
       if (user.emailVerificationToken) {
@@ -259,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryDeadline: new Date(req.body.deliveryDeadline)
       });
 
-      const job = await storage.createJob(jobData);
+      const job = await storage.createJob(jobData as any);
 
       // Notify relevant trucking companies
       wsService.sendJobUpdate(job.id, {
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           jobId,
           participants,
           messages: []
-        });
+        } as any);
       }
 
       // Check if user is participant
@@ -536,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               recurring: {
                 interval: 'month'
               }
-            }
+            } as any
           }],
           payment_behavior: 'default_incomplete',
           expand: ['latest_invoice.payment_intent'],
@@ -546,13 +546,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUserSubscription(user.id!, {
           stripeSubscriptionId: subscription.id,
           subscriptionStatus: 'active',
-          subscriptionExpiresAt: new Date(subscription.current_period_end * 1000)
+          subscriptionExpiresAt: new Date((subscription as any).current_period_end * 1000)
         });
 
         res.json({
           message: 'Subscription created successfully',
           subscriptionId: subscription.id,
-          clientSecret: subscription.latest_invoice?.payment_intent?.client_secret
+          clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret
         });
       } catch (error: any) {
         console.error('Subscription creation error:', error);
@@ -582,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (customer.metadata?.userId) {
               await storage.updateUserSubscription(parseInt(customer.metadata.userId), {
                 subscriptionStatus: 'active',
-                subscriptionExpiresAt: new Date(subscription.current_period_end * 1000)
+                subscriptionExpiresAt: new Date((subscription as any).current_period_end * 1000)
               });
             }
           }
@@ -739,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title,
         description,
         evidence: evidence || []
-      });
+      } as any);
 
       res.status(201).json({ dispute });
     } catch (error: any) {

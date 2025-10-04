@@ -11,6 +11,10 @@ if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
 
 export interface AuthRequest extends Request {
   user?: User;
+  body: any;
+  params: any;
+  query: any;
+  files?: any;
 }
 
 export async function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {

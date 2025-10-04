@@ -1,0 +1,123 @@
+2025-10-04T11:54:08.690381344Z 
+2025-10-04T11:54:08.690389724Z found 0 vulnerabilities
+2025-10-04T11:54:08.869893703Z 
+2025-10-04T11:54:08.869913534Z > loadlink-africa-backend@1.0.0 build
+2025-10-04T11:54:08.869917634Z > (tsc || true) && npx tsc-alias
+2025-10-04T11:54:08.869920414Z 
+2025-10-04T11:54:11.74048965Z middleware/middleware/auth.ts(17,26): error TS2339: Property 'headers' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740637024Z routes.ts(103,9): error TS2353: Object literal may only specify known properties, and 'emailVerificationToken' does not exist in type 'Omit<{ role: "trucking_company" | "shipping_entity" | "super_admin" | "customer_support"; email: string; password: string; contactPersonName: string; phoneNumber: string; physicalAddress: string; }, "createdAt" | "updatedAt">'.
+2025-10-04T11:54:11.740649784Z routes.ts(146,9): error TS2353: Object literal may only specify known properties, and 'emailVerificationToken' does not exist in type 'Omit<{ role: "trucking_company" | "shipping_entity" | "super_admin" | "customer_support"; email: string; password: string; contactPersonName: string; phoneNumber: string; physicalAddress: string; }, "createdAt" | "updatedAt">'.
+2025-10-04T11:54:11.740668595Z routes.ts(229,16): error TS2339: Property 'files' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740709196Z routes.ts(229,29): error TS2339: Property 'files' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740718526Z routes.ts(233,30): error TS2339: Property 'files' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740723846Z routes.ts(256,16): error TS2339: Property 'body' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740732557Z routes.ts(258,34): error TS2339: Property 'body' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740736977Z routes.ts(259,40): error TS2339: Property 'body' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.740975613Z routes.ts(262,43): error TS2345: Argument of type '{}' is not assignable to parameter of type 'Omit<{ industry: "agriculture" | "manufacturing" | "retail" | "mining" | "logistics" | "construction"; shipperId: number; cargoType: "general" | "refrigerated" | "hazardous" | "bulk" | "containers"; ... 9 more ...; paymentTerms: string; }, "createdAt" | "updatedAt">'.
+2025-10-04T11:54:11.740990084Z   Type '{}' is missing the following properties from type 'Omit<{ industry: "agriculture" | "manufacturing" | "retail" | "mining" | "logistics" | "construction"; shipperId: number; cargoType: "general" | "refrigerated" | "hazardous" | "bulk" | "containers"; ... 9 more ...; paymentTerms: string; }, "createdAt" | "updatedAt">': industry, shipperId, cargoType, cargoWeight, and 9 more.
+2025-10-04T11:54:11.741009024Z routes.ts(287,15): error TS2339: Property 'query' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741019145Z routes.ts(334,26): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741022234Z routes.ts(358,26): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741086446Z routes.ts(411,29): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741093067Z routes.ts(434,11): error TS2353: Object literal may only specify known properties, and 'messages' does not exist in type 'Omit<{ jobId: number; participants: number[]; }, "createdAt" | "updatedAt">'.
+2025-10-04T11:54:11.741095227Z routes.ts(452,26): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741102117Z routes.ts(455,12): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+2025-10-04T11:54:11.741104067Z routes.ts(469,36): error TS2339: Property 'query' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741107897Z routes.ts(480,26): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741109707Z routes.ts(483,12): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+2025-10-04T11:54:11.741125267Z routes.ts(531,15): error TS2353: Object literal may only specify known properties, and 'product_data' does not exist in type 'PriceData'.
+2025-10-04T11:54:11.741187829Z routes.ts(549,56): error TS2339: Property 'current_period_end' does not exist on type 'Response<Subscription>'.
+2025-10-04T11:54:11.741190919Z routes.ts(555,54): error TS2339: Property 'payment_intent' does not exist on type 'string | Invoice'.
+2025-10-04T11:54:11.741193189Z   Property 'payment_intent' does not exist on type 'string'.
+2025-10-04T11:54:11.741194969Z routes.ts(585,62): error TS2339: Property 'current_period_end' does not exist on type 'Response<Subscription>'.
+2025-10-04T11:54:11.741207139Z routes.ts(638,74): error TS2339: Property 'query' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.74121262Z routes.ts(668,30): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.74121534Z routes.ts(669,39): error TS2339: Property 'body' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.74122024Z routes.ts(686,61): error TS2339: Property 'query' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.74122245Z routes.ts(705,33): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.74122998Z routes.ts(718,33): error TS2339: Property 'params' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.74123272Z routes.ts(719,34): error TS2339: Property 'body' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741249031Z routes.ts(733,75): error TS2339: Property 'body' does not exist on type 'AuthRequest'.
+2025-10-04T11:54:11.741252541Z routes.ts(738,9): error TS2561: Object literal may only specify known properties, but 'reportedUserId' does not exist in type 'Omit<{ jobId: number; title: string; reporterId: number; description: string; }, "createdAt" | "updatedAt">'. Did you mean to write 'reporterId'?
+2025-10-04T11:54:11.741277301Z storage.ts(144,9): error TS2353: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ role?: "trucking_company" | "shipping_entity" | "super_admin" | "customer_support" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 4 more ...; physicalAddress?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741280121Z storage.ts(158,9): error TS2353: Object literal may only specify known properties, and 'stripeCustomerId' does not exist in type '{ role?: "trucking_company" | "shipping_entity" | "super_admin" | "customer_support" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 4 more ...; physicalAddress?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741289332Z storage.ts(238,9): error TS2353: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ industry?: "agriculture" | "manufacturing" | "retail" | "mining" | "logistics" | "construction" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 11 more ...; paymentTerms?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741294982Z storage.ts(247,9): error TS2353: Object literal may only specify known properties, and 'carrierId' does not exist in type '{ industry?: "agriculture" | "manufacturing" | "retail" | "mining" | "logistics" | "construction" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 11 more ...; paymentTerms?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741305192Z storage.ts(262,9): error TS2353: Object literal may only specify known properties, and 'status' does not exist in type '{ industry?: "agriculture" | "manufacturing" | "retail" | "mining" | "logistics" | "construction" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 11 more ...; paymentTerms?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741308702Z storage.ts(328,9): error TS2353: Object literal may only specify known properties, and 'messages' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; participants?: SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | number[]; }'.
+2025-10-04T11:54:11.741345123Z storage.ts(337,9): error TS2416: Property 'markMessagesAsRead' in type 'PostgreSQLStorage' is not assignable to the same property in base type 'IStorage'.
+2025-10-04T11:54:11.741351393Z   Type '(chatId: number, userId: number) => Promise<void>' is not assignable to type '(chatId: number, userId: number) => Promise<boolean>'.
+2025-10-04T11:54:11.741354063Z     Type 'Promise<void>' is not assignable to type 'Promise<boolean>'.
+2025-10-04T11:54:11.741355994Z       Type 'void' is not assignable to type 'boolean'.
+2025-10-04T11:54:11.741358183Z storage.ts(353,9): error TS2353: Object literal may only specify known properties, and 'messages' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; participants?: SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | number[]; }'.
+2025-10-04T11:54:11.741368484Z storage.ts(378,9): error TS2416: Property 'markNotificationAsRead' in type 'PostgreSQLStorage' is not assignable to the same property in base type 'IStorage'.
+2025-10-04T11:54:11.741373644Z   Type '(id: number) => Promise<void>' is not assignable to type '(id: number) => Promise<boolean>'.
+2025-10-04T11:54:11.741376554Z     Type 'Promise<void>' is not assignable to type 'Promise<boolean>'.
+2025-10-04T11:54:11.741379414Z       Type 'void' is not assignable to type 'boolean'.
+2025-10-04T11:54:11.741381934Z storage.ts(381,14): error TS2353: Object literal may only specify known properties, and 'read' does not exist in type '{ userId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; type?: "job_match" | "job_taken" | ... 4 more ... | PgColumn<...>; title?: string | ... 1 more ... | PgColumn<...>; message?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741384404Z storage.ts(388,14): error TS2353: Object literal may only specify known properties, and 'read' does not exist in type '{ userId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; type?: "job_match" | "job_taken" | ... 4 more ... | PgColumn<...>; title?: string | ... 1 more ... | PgColumn<...>; message?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741398755Z storage.ts(500,66): error TS2339: Property 'verified' does not exist on type 'PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<...>;...'.
+2025-10-04T11:54:11.741424165Z storage.ts(513,5): error TS2740: Type 'Omit<PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColum...' is missing the following properties from type 'PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<......': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-04T11:54:11.741427785Z storage.ts(515,24): error TS2740: Type 'Omit<PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColum...' is missing the following properties from type 'PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<......': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-04T11:54:11.741430485Z storage.ts(516,25): error TS2740: Type 'Omit<PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColum...' is missing the following properties from type 'PgSelectBase<"users", { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<......': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-04T11:54:11.741436226Z storage.ts(528,20): error TS2339: Property 'verified' does not exist on type 'PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 24 more ...; updatedAt: PgColumn<...>;...'.
+2025-10-04T11:54:11.741452516Z storage.ts(538,9): error TS2353: Object literal may only specify known properties, and 'verified' does not exist in type '{ role?: "trucking_company" | "shipping_entity" | "super_admin" | "customer_support" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ... 4 more ...; physicalAddress?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741461176Z storage.ts(551,7): error TS2353: Object literal may only specify known properties, and 'data' does not exist in type 'Omit<{ userId: number; type: "job_match" | "job_taken" | "job_completed" | "payment_confirmed" | "subscription_expiring"; title: string; message: string; }, "createdAt">'.
+2025-10-04T11:54:11.741477557Z storage.ts(581,5): error TS2740: Type 'Omit<PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgColumn<...>; }, ... 5 ...' is missing the following properties from type 'PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgCol...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-04T11:54:11.741479537Z storage.ts(583,24): error TS2740: Type 'Omit<PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgColumn<...>; }, ... 5 ...' is missing the following properties from type 'PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgCol...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-04T11:54:11.741481287Z storage.ts(584,25): error TS2740: Type 'Omit<PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgColumn<...>; }, ... 5 ...' is missing the following properties from type 'PgSelectBase<"disputes", { id: PgColumn<{ name: "id"; tableName: "disputes"; dataType: "number"; columnType: "PgSerial"; data: number; driverParam: number; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; resolvedAt: PgCol...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+2025-10-04T11:54:11.741494047Z storage.ts(603,9): error TS2353: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; reporterId?: number | ... 1 more ... | PgColumn<...>; description?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741495957Z storage.ts(612,9): error TS2353: Object literal may only specify known properties, and 'adminId' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; reporterId?: number | ... 1 more ... | PgColumn<...>; description?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:11.741497697Z storage.ts(623,9): error TS2353: Object literal may only specify known properties, and 'resolution' does not exist in type '{ jobId?: number | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; reporterId?: number | ... 1 more ... | PgColumn<...>; description?: string | ... 1 more ... | PgColumn<...>; }'.
+2025-10-04T11:54:14.269822915Z ==> Uploading build...
+2025-10-04T11:54:19.471101445Z ==> Uploaded in 3.9s. Compression took 1.3s
+2025-10-04T11:54:19.486730283Z ==> Build successful 🎉
+2025-10-04T11:54:21.757446781Z ==> Deploying...
+2025-10-04T11:54:34.13608638Z ==> Running 'cd backend && npm start'
+2025-10-04T11:54:35.229389165Z 
+2025-10-04T11:54:35.229418446Z > loadlink-africa-backend@1.0.0 start
+2025-10-04T11:54:35.229422687Z > NODE_ENV=production node dist/index.js
+2025-10-04T11:54:35.229424676Z 
+2025-10-04T11:54:36.03313674Z node:internal/modules/esm/resolve:275
+2025-10-04T11:54:36.033156831Z     throw new ERR_MODULE_NOT_FOUND(
+2025-10-04T11:54:36.033159202Z           ^
+2025-10-04T11:54:36.033160852Z 
+2025-10-04T11:54:36.033164672Z Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/opt/render/project/src/backend/dist/shared/schema' imported from /opt/render/project/src/backend/dist/middleware/middleware/auth.js
+2025-10-04T11:54:36.033168562Z     at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+2025-10-04T11:54:36.033171322Z     at moduleResolve (node:internal/modules/esm/resolve:860:10)
+2025-10-04T11:54:36.033174203Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-10-04T11:54:36.033177123Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-10-04T11:54:36.033180183Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-10-04T11:54:36.033183143Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-10-04T11:54:36.033186603Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-10-04T11:54:36.033189233Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-10-04T11:54:36.033192513Z   code: 'ERR_MODULE_NOT_FOUND',
+2025-10-04T11:54:36.033194964Z   url: 'file:///opt/render/project/src/backend/dist/shared/schema'
+2025-10-04T11:54:36.033197584Z }
+2025-10-04T11:54:36.033200014Z 
+2025-10-04T11:54:36.033202794Z Node.js v22.16.0
+2025-10-04T11:54:38.102717364Z ==> Exited with status 1
+2025-10-04T11:54:38.118993102Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2025-10-04T11:54:42.696399679Z ==> Running 'cd backend && npm start'
+2025-10-04T11:54:43.698916809Z 
+2025-10-04T11:54:43.698941201Z > loadlink-africa-backend@1.0.0 start
+2025-10-04T11:54:43.698944441Z > NODE_ENV=production node dist/index.js
+2025-10-04T11:54:43.698946201Z 
+2025-10-04T11:54:44.693547339Z node:internal/modules/esm/resolve:275
+2025-10-04T11:54:44.693575131Z     throw new ERR_MODULE_NOT_FOUND(
+2025-10-04T11:54:44.693578591Z           ^
+2025-10-04T11:54:44.693581212Z 
+2025-10-04T11:54:44.693585072Z Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/opt/render/project/src/backend/dist/shared/schema' imported from /opt/render/project/src/backend/dist/middleware/middleware/auth.js
+2025-10-04T11:54:44.693589912Z     at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+2025-10-04T11:54:44.693593002Z     at moduleResolve (node:internal/modules/esm/resolve:860:10)
+2025-10-04T11:54:44.693595242Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-10-04T11:54:44.693597393Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-10-04T11:54:44.693599823Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-10-04T11:54:44.693602153Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-10-04T11:54:44.693605383Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-10-04T11:54:44.693607753Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-10-04T11:54:44.693610443Z   code: 'ERR_MODULE_NOT_FOUND',
+2025-10-04T11:54:44.693612783Z   url: 'file:///opt/render/project/src/backend/dist/shared/schema'
+2025-10-04T11:54:44.693615014Z }
+2025-10-04T11:54:44.693616864Z 
+2025-10-04T11:54:44.693618994Z Node.js v22.16.0

@@ -142,7 +142,7 @@ class PostgreSQLStorage implements IStorage {
       .set({
         ...data,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(users.id, id));
   }
 
@@ -160,7 +160,7 @@ class PostgreSQLStorage implements IStorage {
         subscriptionStatus: data.subscriptionStatus,
         subscriptionExpiresAt: data.subscriptionExpiresAt,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(users.id, id));
   }
 
@@ -236,7 +236,7 @@ class PostgreSQLStorage implements IStorage {
       .set({
         ...data,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(jobs.id, id));
   }
 
@@ -248,7 +248,7 @@ class PostgreSQLStorage implements IStorage {
         status: 'taken',
         takenAt: new Date(),
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(jobs.id, jobId))
       .returning();
     
@@ -262,7 +262,7 @@ class PostgreSQLStorage implements IStorage {
         status: 'completed',
         completedAt: new Date(),
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(jobs.id, jobId))
       .returning();
     
@@ -327,20 +327,20 @@ class PostgreSQLStorage implements IStorage {
       .set({
         messages: updatedMessages,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(chats.id, chatId))
       .returning();
     
     return updatedChat || null;
   }
 
-  async markMessagesAsRead(chatId: number, userId: number): Promise<void> {
+  async markMessagesAsRead(chatId: number, userId: number): Promise<boolean> {
     const [chat] = await db
       .select()
       .from(chats)
       .where(eq(chats.id, chatId));
     
-    if (!chat) return;
+    if (!chat) return false;
     
     const updatedMessages = (chat.messages || []).map(message => ({
       ...message,
@@ -352,8 +352,10 @@ class PostgreSQLStorage implements IStorage {
       .set({
         messages: updatedMessages,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(chats.id, chatId));
+    
+    return true;
   }
 
   // Notifications
@@ -375,17 +377,19 @@ class PostgreSQLStorage implements IStorage {
       .limit(limit);
   }
 
-  async markNotificationAsRead(id: number): Promise<void> {
+  async markNotificationAsRead(id: number): Promise<boolean> {
     await db
       .update(notifications)
-      .set({ read: true })
+      .set({ read: true } as any)
       .where(eq(notifications.id, id));
+    
+    return true;
   }
 
   async markAllNotificationsAsRead(userId: number): Promise<void> {
     await db
       .update(notifications)
-      .set({ read: true })
+      .set({ read: true } as any)
       .where(eq(notifications.userId, userId));
   }
 
@@ -497,7 +501,7 @@ class PostgreSQLStorage implements IStorage {
     
     const conditions = [];
     if (filters.role) conditions.push(eq(users.role, filters.role as any));
-    if (filters.verified !== undefined) conditions.push(eq(users.verified, filters.verified));
+    if (filters.verified !== undefined) conditions.push(eq((users as any).verified, filters.verified));
     if (filters.hasDocuments !== undefined) {
       if (filters.hasDocuments) {
         conditions.push(sql`${users.documents} IS NOT NULL AND ${users.documents} != '[]'`);
@@ -510,10 +514,10 @@ class PostgreSQLStorage implements IStorage {
       query = query.where(and(...conditions)) as any;
     }
     
-    query = query.orderBy(desc(users.createdAt));
+    query = query.orderBy(desc(users.createdAt)) as any;
     
-    if (filters.limit) query = query.limit(filters.limit);
-    if (filters.offset) query = query.offset(filters.offset);
+    if (filters.limit) query = query.limit(filters.limit) as any;
+    if (filters.offset) query = query.offset(filters.offset) as any;
     
     return await query;
   }
@@ -525,7 +529,7 @@ class PostgreSQLStorage implements IStorage {
         and(
           sql`${users.documents} IS NOT NULL`,
           sql`${users.documents} != '[]'`,
-          eq(users.verified, false)
+          eq((users as any).verified, false)
         )
       )
       .orderBy(desc(users.createdAt));
@@ -537,7 +541,7 @@ class PostgreSQLStorage implements IStorage {
       .set({
         verified: approved,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(users.id, userId));
     
     // Create notification for user
@@ -549,7 +553,7 @@ class PostgreSQLStorage implements IStorage {
         ? 'Your business documents have been verified and your account is now active.'
         : `Your documents were rejected: ${notes || 'Please upload valid business documents.'}`,
       data: { adminId, notes }
-    });
+    } as any);
   }
   
   // Dispute operations
@@ -578,10 +582,10 @@ class PostgreSQLStorage implements IStorage {
       query = query.where(and(...conditions)) as any;
     }
     
-    query = query.orderBy(desc(disputes.createdAt));
+    query = query.orderBy(desc(disputes.createdAt)) as any;
     
-    if (filters.limit) query = query.limit(filters.limit);
-    if (filters.offset) query = query.offset(filters.offset);
+    if (filters.limit) query = query.limit(filters.limit) as any;
+    if (filters.offset) query = query.offset(filters.offset) as any;
     
     return await query;
   }
@@ -601,7 +605,7 @@ class PostgreSQLStorage implements IStorage {
       .set({
         ...data,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(disputes.id, id));
   }
   
@@ -612,7 +616,7 @@ class PostgreSQLStorage implements IStorage {
         adminId: adminId,
         status: 'in_review',
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(disputes.id, disputeId));
   }
   
@@ -625,7 +629,7 @@ class PostgreSQLStorage implements IStorage {
         adminId: adminId,
         resolvedAt: new Date(),
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(disputes.id, disputeId));
   }
 }
