@@ -3,9 +3,11 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
   schema: "./shared/schema.ts", // adjust path if needed
   out: "./drizzle",
-  driver: "pg",
   dialect: "postgresql",
+  driver: "pg",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL,
   },
-});
+  verbose: true,  // 🧠 shows detailed logs
+  strict: true,   // 🧱 enforces schema consistency
+};
