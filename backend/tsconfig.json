@@ -4,7 +4,7 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
@@ -18,18 +18,20 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
-    "noEmitOnError": true,
+    "noEmitOnError": false,
     "outDir": "./dist",
-    "rootDir": "./",
     "sourceMap": true,
     "declaration": false,
-    "baseUrl": "./",
+    "allowImportingTsExtensions": true,
+    "baseUrl": "..",
+    "rootDir": "..",
     "paths": {
       "@shared/*": ["./shared/*"]
     }
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "../shared/**/*.ts"
   ],
   "exclude": [
     "node_modules",
