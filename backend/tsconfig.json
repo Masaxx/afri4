@@ -22,11 +22,10 @@
     "outDir": "./dist",
     "sourceMap": true,
     "declaration": false,
-    "allowImportingTsExtensions": true,
     "baseUrl": "..",
     "rootDir": "..",
     "paths": {
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["shared/*"]
     }
   },
   "include": [
