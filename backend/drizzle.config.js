@@ -11,7 +11,7 @@ if (!process.env.DATABASE_URL) {
 // Export the configuration object directly using CommonJS for maximum compatibility.
 module.exports = {
   dialect: 'postgresql',
-  schema: '../shared/schema.ts',
+  schema: './shared/schema.ts',
   out: './drizzle',
   dbCredentials: {
     url: process.env.DATABASE_URL,
