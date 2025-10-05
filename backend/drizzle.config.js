@@ -8,6 +8,6 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
-  verbose: true,  // 🧠 shows detailed logs
-  strict: true,   // 🧱 enforces schema consistency
-}; // ❌ this semicolon closes nothing — causing the syntax error
+  verbose: true,  // shows detailed logs
+  strict: true,   // enforces schema consistency
+});
