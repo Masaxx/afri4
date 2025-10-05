@@ -131,10 +131,6 @@ export const jobs = pgTable('jobs', {
   pickupDate: timestamp('pickup_date').notNull(),
   deliveryDeadline: timestamp('delivery_deadline').notNull(),
   
-  // Payment
-  paymentAmount: integer('payment_amount').notNull(), // in BWP
-  paymentTerms: text('payment_terms').notNull(),
-  
   // Requirements
   specialHandling: text('special_handling'),
   insuranceRequired: boolean('insurance_required').notNull().default(false),
