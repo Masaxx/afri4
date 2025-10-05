@@ -34,7 +34,8 @@
     "stripe": "^18.5.0",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "@drizzle-kit/pglite": "^0.1.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
