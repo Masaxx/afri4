@@ -622,7 +622,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalJobs: await storage.getJobCount(),
         activeJobs: await storage.getJobCount(JobStatus.AVAILABLE),
         completedJobs: await storage.getJobCount(JobStatus.COMPLETED),
-        monthlyRevenue: await storage.getMonthlyRevenue()
       };
 
       res.json({ stats });
