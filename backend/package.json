@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "NODE_ENV=production node dist/backend/index.js",
     "check": "tsc --noEmit",
-    "db:push": "drizzle-kit push",
+    "db:push": "npx drizzle-kit push",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
