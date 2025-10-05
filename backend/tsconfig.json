@@ -36,10 +36,10 @@
     "node_modules",
     "dist",
     "drizzle",
-    "drizzle.config.ts",
+    "drizzle.config.js",
     "../client",
     "../server",
     "../node_modules",
-    "../drizzle.config.ts"
+    "../drizzle.config.js"
   ]
 }
