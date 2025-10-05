@@ -35,6 +35,8 @@
     "node_modules",
     "dist",
     "drizzle",
-    "drizzle.config.ts"
+    "../client",
+    "../server",
+    "../node_modules"
   ]
 }
