@@ -75,7 +75,6 @@ interface IStorage {
   // Analytics operations
   getUserCount(role?: string): Promise<number>;
   getJobCount(status?: string): Promise<number>;
-  getMonthlyRevenue(): Promise<number>;
   
   // Admin operations
   getAllUsers(filters: {
@@ -452,26 +451,8 @@ class PostgreSQLStorage implements IStorage {
     return result?.count || 0;
   }
   
-  async getMonthlyRevenue(): Promise<number> {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    
-    const [result] = await db
-      .select({
-        totalRevenue: sql<number>`SUM(${jobs.paymentAmount})::float`,
-      })
-      .from(jobs)
-      .where(
-        and(
-          eq(jobs.status, 'completed'),
-          sql`${jobs.completedAt} >= ${startOfMonth}`
-        )
-      );
-    
-    return result?.totalRevenue || 0;
-  }
-  
+  // Removed getMonthlyRevenue()
+
   // Additional methods needed by routes
   async getJobsByShipper(shipperId: number): Promise<Job[]> {
     return this.getUserJobs(shipperId, 'shipper');
