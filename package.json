@@ -8,7 +8,7 @@
     "build": "cd backend && npm run build",
     "start": "cd backend && npm run start",
     "check": "tsc",
-    "db:push": "npm install drizzle-orm pg && npx drizzle-kit push --config backend/drizzle.config.js",
+    "db:push": "cd backend && npm install drizzle-orm pg && npx drizzle-kit push --config drizzle.config.js",
     "backend:install": "cd backend && npm install"
   },
   "dependencies": {
