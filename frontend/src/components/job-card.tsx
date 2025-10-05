@@ -9,11 +9,12 @@ import {
   Star, 
   MessageSquare, 
   Clock,
-  DollarSign,
+  DollarSign, // Keeping this import just in case, but its usage is removed
   CheckCircle
 } from "lucide-react";
 import { Link } from "wouter";
 
+// 1. UPDATED INTERFACE
 interface Job {
   id: number;
   cargoType: string;
@@ -24,19 +25,19 @@ interface Job {
   pickupCountry: string;
   deliveryCountry: string;
   industry: string;
-  paymentAmount: number;
-  paymentTerms?: string;
+  // REMOVED: paymentAmount: number;
+  // REMOVED: paymentTerms?: string;
   status: string;
   createdAt: string;
   pickupDate: string;
-  deliveryDeadline?: string;
+  deliveryDeadline?: string | null; // Allow null from DB
   specialHandling?: string;
   insuranceRequired?: boolean;
   notes?: string;
-  shipperId?: number;
-  carrierId?: number;
-  takenAt?: string;
-  completedAt?: string;
+  shipperId: number; // Based on your logs, this seems mandatory
+  carrierId?: number | null; // Allow null from DB
+  takenAt?: string | null; // Allow null from DB
+  completedAt?: string | null; // Allow null from DB
 }
 
 interface JobCardProps {
@@ -82,7 +83,11 @@ export function JobCard({
     }
   };
 
-  const formatDate = (dateString: string) => {
+  // 2. UPDATED function to handle null/undefined dates
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) {
+      return 'N/A';
+    }
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -139,13 +144,14 @@ export function JobCard({
                 </span>
               </div>
               
+              {/* 3. REMOVED PAYMENT BLOCK (As requested and due to field removal) */}
               <div className="flex items-center gap-1">
                 <DollarSign className="h-3 w-3 text-muted-foreground" />
-                <span className="text-muted-foreground">Payment:</span>
-                <span className="font-medium" data-testid="job-payment">
-                  BWP {job.paymentAmount.toLocaleString()}
+                <span className="font-medium text-green-600" data-testid="job-payment">
+                  Unspecified Payment (Negotiable)
                 </span>
               </div>
+              {/* END REMOVED BLOCK */}
             </div>
 
             {/* Additional Details */}
