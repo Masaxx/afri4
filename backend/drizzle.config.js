@@ -10,4 +10,4 @@ export default defineConfig({
   },
   verbose: true,  // 🧠 shows detailed logs
   strict: true,   // 🧱 enforces schema consistency
-};
+}; // ❌ this semicolon closes nothing — causing the syntax error
