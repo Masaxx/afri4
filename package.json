@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "cd backend && npm run build",
-    "start": "cd backend && npm run start",
-    "check": "tsc",
-    "db:push": "cd backend && npm install drizzle-orm pg && npx drizzle-kit push --config drizzle.config.js",
-    "backend:install": "cd backend && npm install"
-  },
+"scripts": {
+  "dev": "NODE_ENV=development tsx server/index.ts",
+  "build": "cd backend && npm run build",
+  "start": "cd backend && npm run start",
+  "check": "tsc",
+  "db:push": "cd backend && npx drizzle-kit push --config drizzle.config.js",
+  "backend:install": "cd backend && npm install"
+},
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
