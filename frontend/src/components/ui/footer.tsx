@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Truck, Code } from "lucide-react";
+import { Truck, Code, Heart } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -92,11 +92,11 @@ export default function Footer() {
         <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
           <p>&copy; 2024 LoadLink Africa. All rights reserved. | Gaborone, Botswana</p>
           <p className="mt-2 text-xs flex justify-center items-center gap-1">
-            <Code className="h-4 w-4 text-muted-foreground" />
-            Developed by{" "}
+            <Heart className="h-4 w-4 text-red-500" />
+            Made with ❤️ by{" "}
             <a
               href="https://lmosimanyana.co.bw"
-              className="hover:text-foreground underline"
+              className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary font-semibold hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >
