@@ -27,30 +27,33 @@ export default function Home() {
             <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto" data-testid="hero-description">
               Connect trucking companies and shipping entities across Africa. Real-time job matching, secure payments, and AI-powered logistics solutions.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/register?type=shipping">
-                <Button 
-                  size="lg" 
-                  className="bg-secondary text-secondary-foreground hover:bg-secondary/90 w-full sm:w-auto"
-                  data-testid="signup-shipping-button"
-                >
-                  <ShipIcon className="mr-2 h-5 w-5" />
-                  Sign Up as Shipping Entity
-                </Button>
-              </Link>
-              <Link href="/register?type=trucking">
-                <Button 
-                  size="lg" 
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
-                  data-testid="signup-trucking-button"
-                >
-                  <Truck className="mr-2 h-5 w-5" />
-                  Sign Up as Trucking Company  
-                </Button>
-              </Link>
-            </div>
-            
+
+            {/* Signup buttons only for non-logged-in users */}
+            {!user && (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link href="/register?type=shipping">
+                  <Button 
+                    size="lg" 
+                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90 w-full sm:w-auto"
+                    data-testid="signup-shipping-button"
+                  >
+                    <ShipIcon className="mr-2 h-5 w-5" />
+                    Sign Up as Shipping Entity
+                  </Button>
+                </Link>
+                <Link href="/register?type=trucking">
+                  <Button 
+                    size="lg" 
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
+                    data-testid="signup-trucking-button"
+                  >
+                    <Truck className="mr-2 h-5 w-5" />
+                    Sign Up as Trucking Company  
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             {/* Features Grid */}
             <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
               <div className="text-center" data-testid="feature-realtime">
@@ -122,7 +125,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Simple, Transparent Pricing</h2>
           <p className="text-xl text-muted-foreground mb-12">Choose the plan that works best for your business</p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Shipping Entity Plan */}
             <Card className="relative" data-testid="pricing-shipping">
@@ -150,14 +153,18 @@ export default function Home() {
                     <span className="text-foreground">Performance analytics</span>
                   </li>
                 </ul>
-                <Link href="/register?type=shipping" className="block">
-                  <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90" data-testid="start-shipping-button">
-                    Start Shipping for Free
-                  </Button>
-                </Link>
+
+                {/* Only show signup button if user is not logged in */}
+                {!user && (
+                  <Link href="/register?type=shipping" className="block">
+                    <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90" data-testid="start-shipping-button">
+                      Start Shipping for Free
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
-            
+
             {/* Trucking Company Plan */}
             <Card className="relative border-primary" data-testid="pricing-trucking">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -193,11 +200,16 @@ export default function Home() {
                     <span className="text-foreground">3 simultaneous device logins</span>
                   </li>
                 </ul>
-                <Link href="/register?type=trucking" className="block">
-                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" data-testid="start-trial-button">
-                    Start 7-Day Free Trial
-                  </Button>
-                </Link>
+
+                {/* Only show signup button if user is not logged in */}
+                {!user && (
+                  <Link href="/register?type=trucking" className="block">
+                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" data-testid="start-trial-button">
+                      Start 7-Day Free Trial
+                    </Button>
+                  </Link>
+                )}
+
                 <p className="text-xs text-muted-foreground mt-3 text-center">Or BWP 4,499/year (save 25%)</p>
               </CardContent>
             </Card>
