@@ -4,7 +4,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +22,6 @@ interface Job {
   pickupCountry: string;
   deliveryCountry: string;
   industry: string;
-  paymentAmount: number;
   status: string;
   createdAt: string;
   pickupDate: string;
@@ -35,47 +33,47 @@ export default function TruckingDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { onJobUpdate, onNewMessage } = useWebSocket();
-  
+
   const [filters, setFilters] = useState({
     cargoType: "",
     industry: "",
     pickupCountry: "",
     deliveryCountry: "",
   });
-  
+
   const [activeTab, setActiveTab] = useState("jobs");
 
   // Fetch available jobs
   const { data: jobsData, isLoading: jobsLoading } = useQuery({
-    queryKey: ['/api/jobs', filters],
+    queryKey: ["/api/jobs", filters],
     queryFn: async () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
-      const response = await apiRequest('GET', `/api/jobs?${params.toString()}`);
+      const response = await apiRequest("GET", `/api/jobs?${params.toString()}`);
       return response.json();
-    }
+    },
   });
 
   // Fetch user's jobs
   const { data: myJobsData } = useQuery({
-    queryKey: ['/api/jobs/my'],
+    queryKey: ["/api/jobs/my"],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/jobs/my');
+      const response = await apiRequest("GET", "/api/jobs/my");
       return response.json();
-    }
+    },
   });
 
   // Take job mutation
   const takeJobMutation = useMutation({
     mutationFn: async (jobId: string) => {
-      const response = await apiRequest('PATCH', `/api/jobs/${jobId}/take`);
+      const response = await apiRequest("PATCH", `/api/jobs/${jobId}/take`);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/jobs/my'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs/my"] });
       toast({
         title: "Success",
         description: "Job taken successfully!",
@@ -87,14 +85,14 @@ export default function TruckingDashboard() {
         description: error.message,
         variant: "destructive",
       });
-    }
+    },
   });
 
   // WebSocket listeners
   useEffect(() => {
     onJobUpdate((data) => {
-      if (data.type === 'new_job') {
-        queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+      if (data.type === "new_job") {
+        queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
         toast({
           title: "New Job Available",
           description: "A new job matching your criteria has been posted.",
@@ -103,7 +101,6 @@ export default function TruckingDashboard() {
     });
 
     onNewMessage(() => {
-      // Handle new message notification
       toast({
         title: "New Message",
         description: "You have received a new message.",
@@ -112,7 +109,10 @@ export default function TruckingDashboard() {
   }, [onJobUpdate, onNewMessage, queryClient, toast]);
 
   const handleTakeJob = (jobId: string) => {
-    if (user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'trial') {
+    if (
+      user?.subscriptionStatus !== "active" &&
+      user?.subscriptionStatus !== "trial"
+    ) {
       toast({
         title: "Subscription Required",
         description: "Please activate your subscription to apply for jobs.",
@@ -124,7 +124,7 @@ export default function TruckingDashboard() {
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const clearFilters = () => {
@@ -136,17 +136,25 @@ export default function TruckingDashboard() {
     });
   };
 
-  if (!user || user.role !== 'trucking_company') {
-    return <div className="min-h-screen flex items-center justify-center">Unauthorized</div>;
+  if (!user || user.role !== "trucking_company") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Unauthorized
+      </div>
+    );
   }
 
-  const subscriptionStatusColor = user.subscriptionStatus === 'active' ? 'bg-secondary' : 
-                                 user.subscriptionStatus === 'trial' ? 'bg-accent' : 'bg-destructive';
+  const subscriptionStatusColor =
+    user.subscriptionStatus === "active"
+      ? "bg-secondary"
+      : user.subscriptionStatus === "trial"
+      ? "bg-accent"
+      : "bg-destructive";
 
   return (
     <div className="min-h-screen bg-background" data-testid="trucking-dashboard">
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <Card className="mb-8">
@@ -157,16 +165,27 @@ export default function TruckingDashboard() {
                   <Truck className="text-primary-foreground h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground" data-testid="company-name">
+                  <h1
+                    className="text-2xl font-bold text-foreground"
+                    data-testid="company-name"
+                  >
                     {user.companyName}
                   </h1>
-                  <p className="text-muted-foreground">Fleet Size: {user.fleetSize || 0} trucks</p>
+                  <p className="text-muted-foreground">
+                    Fleet Size: {user.fleetSize || 0} trucks
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Badge className={subscriptionStatusColor} data-testid="subscription-status">
-                  {user.subscriptionStatus === 'active' ? 'Active Subscription' : 
-                   user.subscriptionStatus === 'trial' ? 'Free Trial' : 'Inactive'}
+                <Badge
+                  className={subscriptionStatusColor}
+                  data-testid="subscription-status"
+                >
+                  {user.subscriptionStatus === "active"
+                    ? "Active Subscription"
+                    : user.subscriptionStatus === "trial"
+                    ? "Free Trial"
+                    : "Inactive"}
                 </Badge>
                 <Button variant="ghost" size="sm" data-testid="notifications-button">
                   <Bell className="h-5 w-5" />
@@ -179,26 +198,26 @@ export default function TruckingDashboard() {
         {/* Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} data-testid="dashboard-tabs">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="jobs" className="flex items-center gap-2" data-testid="tab-jobs">
+            <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Available Jobs
             </TabsTrigger>
-            <TabsTrigger value="my-jobs" className="flex items-center gap-2" data-testid="tab-my-jobs">
+            <TabsTrigger value="my-jobs" className="flex items-center gap-2">
               <Truck className="h-4 w-4" />
               My Jobs
             </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2" data-testid="tab-messages">
+            <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Messages
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2" data-testid="tab-analytics">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="jobs" className="mt-6" data-testid="jobs-content">
-            {/* Job Filters */}
+          {/* Jobs Tab */}
+          <TabsContent value="jobs" className="mt-6">
             <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -206,14 +225,17 @@ export default function TruckingDashboard() {
                     <Filter className="h-5 w-5" />
                     Filter Jobs
                   </h3>
-                  <Button variant="outline" size="sm" onClick={clearFilters} data-testid="clear-filters">
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
                     Clear Filters
                   </Button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Select onValueChange={(value) => handleFilterChange('pickupCountry', value)} value={filters.pickupCountry}>
-                    <SelectTrigger data-testid="filter-pickup-country">
+                  <Select
+                    onValueChange={(v) => handleFilterChange("pickupCountry", v)}
+                    value={filters.pickupCountry}
+                  >
+                    <SelectTrigger>
                       <SelectValue placeholder="Pickup Country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -225,8 +247,11 @@ export default function TruckingDashboard() {
                     </SelectContent>
                   </Select>
 
-                  <Select onValueChange={(value) => handleFilterChange('cargoType', value)} value={filters.cargoType}>
-                    <SelectTrigger data-testid="filter-cargo-type">
+                  <Select
+                    onValueChange={(v) => handleFilterChange("cargoType", v)}
+                    value={filters.cargoType}
+                  >
+                    <SelectTrigger>
                       <SelectValue placeholder="Cargo Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -238,8 +263,11 @@ export default function TruckingDashboard() {
                     </SelectContent>
                   </Select>
 
-                  <Select onValueChange={(value) => handleFilterChange('industry', value)} value={filters.industry}>
-                    <SelectTrigger data-testid="filter-industry">
+                  <Select
+                    onValueChange={(v) => handleFilterChange("industry", v)}
+                    value={filters.industry}
+                  >
+                    <SelectTrigger>
                       <SelectValue placeholder="Industry" />
                     </SelectTrigger>
                     <SelectContent>
@@ -252,7 +280,7 @@ export default function TruckingDashboard() {
                     </SelectContent>
                   </Select>
 
-                  <Button className="bg-primary text-primary-foreground" data-testid="search-jobs">
+                  <Button className="bg-primary text-primary-foreground">
                     <Search className="h-4 w-4 mr-2" />
                     Search Jobs
                   </Button>
@@ -261,7 +289,7 @@ export default function TruckingDashboard() {
             </Card>
 
             {/* Job Listings */}
-            <div className="space-y-4" data-testid="job-listings">
+            <div className="space-y-4">
               {jobsLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -274,7 +302,6 @@ export default function TruckingDashboard() {
                     userRole="trucking_company"
                     onTakeJob={handleTakeJob}
                     isLoading={takeJobMutation.isPending}
-                    data-testid={`job-card-${job.id}`}
                   />
                 ))
               ) : (
@@ -291,7 +318,8 @@ export default function TruckingDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="my-jobs" className="mt-6" data-testid="my-jobs-content">
+          {/* My Jobs Tab */}
+          <TabsContent value="my-jobs" className="mt-6">
             <div className="space-y-4">
               {myJobsData?.jobs?.length > 0 ? (
                 myJobsData.jobs.map((job: Job) => (
@@ -299,15 +327,16 @@ export default function TruckingDashboard() {
                     key={job.id}
                     job={job}
                     userRole="trucking_company"
-                    showManageActions={true}
-                    data-testid={`my-job-card-${job.id}`}
+                    showManageActions
                   />
                 ))
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No jobs taken yet</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      No jobs taken yet
+                    </h3>
                     <p className="text-muted-foreground">
                       Browse available jobs and start building your track record.
                     </p>
@@ -317,7 +346,8 @@ export default function TruckingDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="messages" className="mt-6" data-testid="messages-content">
+          {/* Messages Tab */}
+          <TabsContent value="messages" className="mt-6">
             <Card>
               <CardContent className="p-8 text-center">
                 <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -325,21 +355,22 @@ export default function TruckingDashboard() {
                 <p className="text-muted-foreground mb-4">
                   Start conversations by applying to jobs or contacting shippers.
                 </p>
-                <Button onClick={() => setActiveTab('jobs')} data-testid="browse-jobs-button">
-                  Browse Jobs
-                </Button>
+                <Button onClick={() => setActiveTab("jobs")}>Browse Jobs</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-6" data-testid="analytics-content">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Analytics Tab (simplified, no payment calculation) */}
+          <TabsContent value="analytics" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Jobs Completed</p>
-                      <p className="text-2xl font-bold">{myJobsData?.jobs?.filter((j: Job) => j.status === 'completed').length || 0}</p>
+                      <p className="text-2xl font-bold">
+                        {myJobsData?.jobs?.filter((j: Job) => j.status === "completed").length || 0}
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
                       <BarChart3 className="h-6 w-6 text-secondary" />
@@ -353,28 +384,12 @@ export default function TruckingDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Active Jobs</p>
-                      <p className="text-2xl font-bold">{myJobsData?.jobs?.filter((j: Job) => j.status === 'taken').length || 0}</p>
+                      <p className="text-2xl font-bold">
+                        {myJobsData?.jobs?.filter((j: Job) => j.status === "taken").length || 0}
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
                       <Truck className="h-6 w-6 text-accent" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Revenue</p>
-                      <p className="text-2xl font-bold">
-                        BWP {myJobsData?.jobs?.reduce((sum: number, job: Job) => 
-                          job.status === 'completed' ? sum + job.paymentAmount : sum, 0
-                        )?.toLocaleString() || '0'}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="h-6 w-6 text-primary" />
                     </div>
                   </div>
                 </CardContent>
