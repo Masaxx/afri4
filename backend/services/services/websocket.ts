@@ -8,18 +8,31 @@ export class WebSocketService {
   private io: SocketIOServer;
   private userSockets: Map<number, string> = new Map(); // userId -> socketId
 
-  constructor(server: HTTPServer) {
-    this.io = new SocketIOServer(server, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-      },
-      path: '/ws'
-    });
+// Update the WebSocket constructor in backend/services/services/websocket.ts
 
-    this.setupMiddleware();
-    this.setupEventHandlers();
-  }
+constructor(server: HTTPServer) {
+  this.io = new SocketIOServer(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    },
+    path: '/ws',
+    // Add these timeout configurations
+    pingTimeout: 60000, // 60 seconds
+    pingInterval: 25000, // 25 seconds
+    upgradeTimeout: 30000, // 30 seconds
+    // Allow fallback to long polling if WebSocket fails
+    transports: ['websocket', 'polling'],
+    // Connection state recovery
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+      skipMiddlewares: true,
+    }
+  });
+
+  this.setupMiddleware();
+  this.setupEventHandlers();
+}
 
   private setupMiddleware() {
     this.io.use(async (socket, next) => {
