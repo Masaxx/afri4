@@ -463,6 +463,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+// Add this route after the chat routes in backend/routes.ts
+// Around line 430, after the "app.patch('/api/chats/:id/read'..." route
+
+app.post('/api/chats/:id/messages', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Message content is required' });
+    }
+
+    // Get chat to verify access
+    const chat = await storage.getChatById(parseInt(id));
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    // Check if user is a participant
+    if (!chat.participants.includes(req.user!.id)) {
+      return res.status(403).json({ message: 'Not authorized to send messages in this chat' });
+    }
+
+    // Add message
+    const updatedChat = await storage.addMessage(parseInt(id), req.user!.id, content.trim());
+
+    if (!updatedChat) {
+      return res.status(500).json({ message: 'Failed to add message' });
+    }
+
+    // Send WebSocket notification to other participants
+    for (const participantId of chat.participants) {
+      if (participantId !== req.user!.id) {
+        wsService.sendNotificationToUser(participantId, {
+          type: 'new_message',
+          title: 'New Message',
+          message: `New message from ${req.user!.contactPersonName}`,
+          data: { chatId: id, senderId: req.user!.id }
+        });
+      }
+    }
+
+    res.json({ 
+      message: 'Message sent successfully', 
+      chat: updatedChat 
+    });
+  } catch (error: any) {
+    console.error('Send message error:', error);
+    res.status(500).json({ message: 'Failed to send message' });
+  }
+});
+
+
+
+
+
+
+  
   // Notification routes
   app.get('/api/notifications', authenticateToken, async (req: AuthRequest, res) => {
     try {
