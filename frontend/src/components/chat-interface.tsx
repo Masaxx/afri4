@@ -39,7 +39,6 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
   const { sendMessage, joinChat, leaveChat, onNewMessage, isConnected } = useWebSocket();
   
   const [messageText, setMessageText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch chat data
@@ -52,14 +51,24 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
     enabled: !!chatId
   });
 
-  // Mark messages as read
-  const markAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('PATCH', `/api/chats/${chatId}/read`);
+  // Send message mutation (fallback for when WebSocket fails)
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const response = await apiRequest('POST', `/api/chats/${chatId}/messages`, {
+        content
+      });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/chats', chatId] });
+      setMessageText("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to send message: ${error.message}`,
+        variant: "destructive",
+      });
     }
   });
 
@@ -68,9 +77,12 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
   // Join chat room on mount
   useEffect(() => {
     if (chatId && isConnected) {
-      joinChat(chatId);
+      console.log('Joining chat:', chatId);
+      joinChat(String(chatId));
+      
       return () => {
-        leaveChat(chatId);
+        console.log('Leaving chat:', chatId);
+        leaveChat(String(chatId));
       };
     }
   }, [chatId, isConnected, joinChat, leaveChat]);
@@ -78,17 +90,14 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
   // Listen for new messages
   useEffect(() => {
     const handleNewMessage = (data: any) => {
+      console.log('New message received:', data);
       if (data.chatId === chatId) {
         queryClient.invalidateQueries({ queryKey: ['/api/chats', chatId] });
-        // Mark as read if user is viewing this chat
-        if (data.message.senderId !== user?.id) {
-          setTimeout(() => markAsReadMutation.mutate(), 500);
-        }
       }
     };
 
     onNewMessage(handleNewMessage);
-  }, [chatId, onNewMessage, queryClient, user?.id, markAsReadMutation]);
+  }, [chatId, onNewMessage, queryClient]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -99,12 +108,37 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !isConnected) return;
+  const handleSendMessage = async () => {
+    const content = messageText.trim();
+    if (!content) {
+      toast({
+        title: "Error",
+        description: "Message cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    sendMessage(chatId, messageText.trim());
-    setMessageText("");
-    setIsTyping(false);
+    console.log('Sending message:', { chatId, content, isConnected });
+
+    // Try WebSocket first, fallback to HTTP
+    if (isConnected) {
+      try {
+        sendMessage(String(chatId), content);
+        setMessageText("");
+        // Optimistically update the UI
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/chats', chatId] });
+        }, 100);
+      } catch (error) {
+        console.error('WebSocket send failed, using HTTP fallback:', error);
+        sendMessageMutation.mutate(content);
+      }
+    } else {
+      // Use HTTP fallback when WebSocket is disconnected
+      console.log('WebSocket disconnected, using HTTP');
+      sendMessageMutation.mutate(content);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -120,7 +154,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
     return otherParticipant ? "Chat Partner" : "Unknown";
   };
 
-  const getUserInitials = (userId: string) => {
+  const getUserInitials = (userId: number) => {
     if (userId === user?.id) {
       return user.contactPersonName?.substring(0, 2).toUpperCase() || "ME";
     }
@@ -247,7 +281,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
           {!isConnected && (
             <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-center">
               <span className="text-amber-700 text-sm">
-                Disconnected - Messages may not send
+                Reconnecting... Messages will be sent via HTTP
               </span>
             </div>
           )}
@@ -258,15 +292,19 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              disabled={!isConnected}
+              disabled={sendMessageMutation.isPending}
               data-testid="message-input"
             />
             <Button 
               onClick={handleSendMessage}
-              disabled={!messageText.trim() || !isConnected}
+              disabled={!messageText.trim() || sendMessageMutation.isPending}
               data-testid="send-message-button"
             >
-              <Send className="h-4 w-4" />
+              {sendMessageMutation.isPending ? (
+                <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
