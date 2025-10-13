@@ -1,3 +1,6 @@
+// Updated frontend/src/pages/shipping-dashboard.tsx
+// This adds all cargo types and SADC countries to job posting
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -20,6 +23,46 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
+// UPDATED: All cargo types from registration
+const CARGO_TYPES = [
+  { value: "general", label: "General Cargo" },
+  { value: "refrigerated", label: "Refrigerated Goods" },
+  { value: "hazardous", label: "Hazardous Materials" },
+  { value: "bulk", label: "Bulk Cargo" },
+  { value: "containers", label: "Containers (20ft/40ft)" },
+  { value: "livestock", label: "Livestock" },
+  { value: "agricultural", label: "Agricultural Products" },
+  { value: "mining", label: "Mining Equipment & Minerals" },
+  { value: "construction", label: "Construction Materials" },
+  { value: "vehicles", label: "Vehicles & Machinery" },
+  { value: "electronics", label: "Electronics" },
+  { value: "textiles", label: "Textiles & Clothing" },
+  { value: "pharmaceuticals", label: "Pharmaceuticals" },
+  { value: "perishables", label: "Perishable Goods" },
+  { value: "oversized", label: "Oversized/Heavy Machinery" },
+  { value: "liquids", label: "Liquids/Tanker" },
+];
+
+// UPDATED: All SADC countries
+const SADC_COUNTRIES = [
+  { value: "AGO", label: "Angola" },
+  { value: "BWA", label: "Botswana" },
+  { value: "COM", label: "Comoros" },
+  { value: "COD", label: "Democratic Republic of Congo" },
+  { value: "SWZ", label: "Eswatini" },
+  { value: "LSO", label: "Lesotho" },
+  { value: "MDG", label: "Madagascar" },
+  { value: "MWI", label: "Malawi" },
+  { value: "MUS", label: "Mauritius" },
+  { value: "MOZ", label: "Mozambique" },
+  { value: "NAM", label: "Namibia" },
+  { value: "SYC", label: "Seychelles" },
+  { value: "ZAF", label: "South Africa" },
+  { value: "TZA", label: "Tanzania" },
+  { value: "ZMB", label: "Zambia" },
+  { value: "ZWE", label: "Zimbabwe" },
+];
 
 interface Job {
   id: number;
@@ -111,7 +154,7 @@ export default function ShippingDashboard() {
 
   // Complete job mutation
   const completeJobMutation = useMutation({
-    mutationFn: async (jobId: string) => {
+    mutationFn: async (jobId: number) => {
       const response = await apiRequest('PATCH', `/api/jobs/${jobId}/complete`);
       return response.json();
     },
@@ -145,7 +188,7 @@ export default function ShippingDashboard() {
     createJobMutation.mutate(data);
   };
 
-  const handleCompleteJob = (jobId: string) => {
+  const handleCompleteJob = (jobId: number) => {
     completeJobMutation.mutate(jobId);
   };
 
@@ -200,11 +243,11 @@ export default function ShippingDashboard() {
                               <SelectValue placeholder="Select cargo type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="general">General</SelectItem>
-                              <SelectItem value="refrigerated">Refrigerated</SelectItem>
-                              <SelectItem value="hazardous">Hazardous</SelectItem>
-                              <SelectItem value="bulk">Bulk</SelectItem>
-                              <SelectItem value="containers">Containers</SelectItem>
+                              {CARGO_TYPES.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           {form.formState.errors.cargoType && (
@@ -273,11 +316,11 @@ export default function ShippingDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="BWA">Botswana</SelectItem>
-                                <SelectItem value="ZAF">South Africa</SelectItem>
-                                <SelectItem value="NAM">Namibia</SelectItem>
-                                <SelectItem value="ZWE">Zimbabwe</SelectItem>
-                                <SelectItem value="ZMB">Zambia</SelectItem>
+                                {SADC_COUNTRIES.map((country) => (
+                                  <SelectItem key={country.value} value={country.value}>
+                                    {country.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -289,11 +332,11 @@ export default function ShippingDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="BWA">Botswana</SelectItem>
-                                <SelectItem value="ZAF">South Africa</SelectItem>
-                                <SelectItem value="NAM">Namibia</SelectItem>
-                                <SelectItem value="ZWE">Zimbabwe</SelectItem>
-                                <SelectItem value="ZMB">Zambia</SelectItem>
+                                {SADC_COUNTRIES.map((country) => (
+                                  <SelectItem key={country.value} value={country.value}>
+                                    {country.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
