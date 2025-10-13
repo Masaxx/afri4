@@ -406,46 +406,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/chats/job/:jobId', authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const { jobId } = req.params;
-      let chat = await storage.getChatByJobId(jobId);
+  // Update the chat retrieval route in backend/routes.ts
+// Replace the existing app.get('/api/chats/job/:jobId'...) route
 
-      if (!chat) {
-        // Get job to find participants
-        const job = await storage.getJobById(jobId);
-        if (!job) {
-          return res.status(404).json({ message: 'Job not found' });
-        }
+app.get('/api/chats/job/:jobId', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { jobId } = req.params;
+    let chat = await storage.getChatByJobId(parseInt(jobId));
 
-        // Create chat if it doesn't exist
-        const participants = [job.shipperId];
-        if (job.carrierId) {
-          participants.push(job.carrierId);
-        }
-
-        if (!participants.includes(req.user!.id)) {
-          return res.status(403).json({ message: 'Not authorized to access this chat' });
-        }
-
-        chat = await storage.createChat({
-          jobId,
-          participants,
-          messages: []
-        } as any);
+    if (!chat) {
+      // Get job to find participants
+      const job = await storage.getJobById(parseInt(jobId));
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
       }
 
-      // Check if user is participant
-      if (!chat.participants.includes(req.user!.id)) {
+      // Only create chat if job has both shipper and carrier
+      if (!job.carrierId) {
+        return res.status(400).json({ 
+          message: 'Chat cannot be created until a carrier is assigned to this job' 
+        });
+      }
+
+      // Create chat if it doesn't exist
+      const participants = [job.shipperId];
+      if (job.carrierId) {
+        participants.push(job.carrierId);
+      }
+
+      // Check if user is authorized
+      if (!participants.includes(req.user!.id)) {
         return res.status(403).json({ message: 'Not authorized to access this chat' });
       }
 
-      res.json({ chat });
-    } catch (error: any) {
-      console.error('Chat fetch error:', error);
-      res.status(500).json({ message: 'Failed to fetch chat' });
+      chat = await storage.createChat({
+        jobId: parseInt(jobId),
+        participants,
+        messages: []
+      } as any);
     }
-  });
+
+    // Check if user is participant
+    if (!chat.participants.includes(req.user!.id)) {
+      return res.status(403).json({ message: 'Not authorized to access this chat' });
+    }
+
+    res.json({ chat });
+  } catch (error: any) {
+    console.error('Chat fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch chat' });
+  }
+});
+
+// Also add a direct GET route for chat by ID
+app.get('/api/chats/:id', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const chat = await storage.getChatById(parseInt(id));
+
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    // Check if user is participant
+    if (!chat.participants.includes(req.user!.id)) {
+      return res.status(403).json({ message: 'Not authorized to access this chat' });
+    }
+
+    res.json({ chat });
+  } catch (error: any) {
+    console.error('Chat fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch chat' });
+  }
+});
 
   app.patch('/api/chats/:id/read', authenticateToken, async (req: AuthRequest, res) => {
     try {
