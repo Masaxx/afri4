@@ -11,6 +11,7 @@ const corsOptions = {
       process.env.FRONTEND_URL || 'https://www.loadxafrica.com',
       'http://localhost:3000', // Local development
       'https://localhost:3000', // Local development with HTTPS
+      'https://loadxafrica.com',
       'https://afri4-7fb5.vercel.app', // Production frontend
     ];
     
