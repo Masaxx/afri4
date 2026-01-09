@@ -9,7 +9,7 @@
     "check": "tsc --noEmit",
     "prebuild": "echo 'Starting prebuild...'",
     "build": "tsc",
-    "postbuild": "npx drizzle-kit push --config drizzle.config.js",
+    "postbuild": "echo 'Build complete. Database migrations will run on startup.'",
     "start": "NODE_ENV=production node dist/backend/index.js",
     "db:push": "npx drizzle-kit push --config drizzle.config.js",
     "db:generate": "npx drizzle-kit generate"
