@@ -8,6 +8,10 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
+import VerifyEmail from "@/pages/verify-email";
+import Verify2FA from "@/pages/verify-2fa";
 import TruckingDashboard from "@/pages/trucking-dashboard";
 import ShippingDashboard from "@/pages/shipping-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -31,9 +35,14 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public routes */}
       <Route path="/" component={Home} />
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/verify-2fa" component={Verify2FA} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/faq" component={FAQ} />
