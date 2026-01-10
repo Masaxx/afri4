@@ -6,6 +6,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { storage } from "./storage.js";
 import { WebSocketService } from "./services/services/websocket.js";
 import { emailService } from "./services/services/email.js";
@@ -18,7 +19,6 @@ import {
   UserRole,
   JobStatus 
 } from "./shared/schema.js";
-import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 
@@ -64,9 +64,19 @@ const upload = multer({
   }
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Database connection handled by Drizzle DB
+// Helper function to generate 6-digit 2FA code
+function generate2FACode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
+// Helper function to generate backup codes
+function generateBackupCodes(): string[] {
+  return Array.from({ length: 10 }, () => 
+    crypto.randomBytes(4).toString('hex').toUpperCase()
+  );
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Initialize WebSocket service
@@ -85,7 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auth routes
+  // ==================== AUTHENTICATION ROUTES ====================
+
+  // Register Trucking Company
   app.post('/api/auth/register/trucking', async (req, res) => {
     try {
       const validatedData = registerTruckingSchema.parse(req.body);
@@ -96,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: 'Email already registered' });
       }
 
-      // Create user
+      // Create user with verification token
       const user = await storage.createUser({
         ...validatedData,
         role: UserRole.TRUCKING_COMPANY,
@@ -106,7 +118,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send verification email
       if (user.emailVerificationToken) {
-        await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
+        const emailSent = await emailService.sendVerificationEmail(
+          user.email, 
+          user.emailVerificationToken
+        );
+        
+        if (!emailSent) {
+          console.warn('Failed to send verification email to:', user.email);
+        }
       }
 
       // Generate JWT token
@@ -120,15 +139,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           role: user.role,
           companyName: user.companyName,
-          subscriptionStatus: user.subscriptionStatus
+          subscriptionStatus: user.subscriptionStatus,
+          emailVerified: user.emailVerified
         }
       });
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Trucking registration error:', error);
       res.status(400).json({ message: error.message || 'Registration failed' });
     }
   });
 
+  // Register Shipping Entity
   app.post('/api/auth/register/shipping', async (req, res) => {
     try {
       const validatedData = registerShippingSchema.parse(req.body);
@@ -139,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: 'Email already registered' });
       }
 
-      // Create user
+      // Create user with verification token
       const user = await storage.createUser({
         ...validatedData,
         role: UserRole.SHIPPING_ENTITY,
@@ -149,7 +170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send verification email
       if (user.emailVerificationToken) {
-        await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
+        const emailSent = await emailService.sendVerificationEmail(
+          user.email, 
+          user.emailVerificationToken
+        );
+        
+        if (!emailSent) {
+          console.warn('Failed to send verification email to:', user.email);
+        }
       }
 
       // Generate JWT token
@@ -163,29 +191,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           role: user.role,
           companyName: user.companyName,
-          subscriptionStatus: user.subscriptionStatus
+          subscriptionStatus: user.subscriptionStatus,
+          emailVerified: user.emailVerified
         }
       });
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Shipping registration error:', error);
       res.status(400).json({ message: error.message || 'Registration failed' });
     }
   });
 
+  // Email Verification
+  app.get('/api/auth/verify-email', async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: 'Invalid verification token' });
+      }
+
+      // Find user with this token
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired verification token' });
+      }
+
+      if (user.emailVerified) {
+        return res.status(200).json({ 
+          message: 'Email already verified',
+          alreadyVerified: true
+        });
+      }
+
+      // Verify the email
+      await storage.verifyUserEmail(user.id);
+
+      res.status(200).json({ 
+        message: 'Email verified successfully! You can now log in.',
+        verified: true
+      });
+    } catch (error: any) {
+      console.error('Email verification error:', error);
+      res.status(500).json({ message: 'Email verification failed' });
+    }
+  });
+
+  // Login with 2FA
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { email, password } = loginSchema.parse(req.body);
+      const { email, password, twoFactorCode } = req.body;
+
+      // Validate input
+      const validatedData = loginSchema.parse({ email, password });
 
       // Find user
-      const user = await storage.getUserByEmail(email);
+      const user = await storage.getUserByEmail(validatedData.email);
       if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
+      // Check if account is locked
+      if (user.accountLocked && user.lockExpires) {
+        if (new Date() < user.lockExpires) {
+          const minutesLeft = Math.ceil((user.lockExpires.getTime() - Date.now()) / 60000);
+          return res.status(423).json({ 
+            message: `Account locked. Try again in ${minutesLeft} minutes.`,
+            locked: true
+          });
+        } else {
+          // Unlock account if lock period has expired
+          await storage.unlockAccount(user.id);
+        }
+      }
+
       // Check password
-      const isValidPassword = await bcrypt.compare(password, user.password);
+      const isValidPassword = await bcrypt.compare(validatedData.password, user.password);
+      
       if (!isValidPassword) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        // Increment login attempts
+        const attempts = await storage.incrementLoginAttempts(user.id);
+        
+        // Lock account after 5 failed attempts
+        if (attempts >= 5) {
+          const lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+          await storage.lockAccount(user.id, lockUntil);
+          return res.status(423).json({ 
+            message: 'Account locked due to too many failed login attempts. Try again in 30 minutes.',
+            locked: true
+          });
+        }
+        
+        return res.status(401).json({ 
+          message: `Invalid credentials. ${5 - attempts} attempts remaining.`
+        });
+      }
+
+      // Reset login attempts on successful password verification
+      await storage.resetLoginAttempts(user.id);
+
+      // Check if 2FA is enabled
+      if (user.twoFactorEnabled) {
+        // If 2FA code not provided, send code and require it
+        if (!twoFactorCode) {
+          const code = generate2FACode();
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+          
+          await storage.set2FACode(user.id, code, expiresAt);
+          await emailService.send2FACode(user.email, code);
+          
+          return res.status(200).json({
+            requires2FA: true,
+            message: 'A 2FA code has been sent to your email'
+          });
+        }
+
+        // Verify 2FA code
+        const isValidCode = await storage.verify2FACode(user.id, twoFactorCode);
+        
+        if (!isValidCode) {
+          return res.status(401).json({ message: 'Invalid or expired 2FA code' });
+        }
+
+        // Clear 2FA code after successful verification
+        await storage.clear2FACode(user.id);
       }
 
       // Generate JWT token
@@ -200,7 +329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: user.role,
           companyName: user.companyName,
           subscriptionStatus: user.subscriptionStatus,
-          emailVerified: user.emailVerified
+          emailVerified: user.emailVerified,
+          twoFactorEnabled: user.twoFactorEnabled
         }
       });
     } catch (error: any) {
@@ -209,6 +339,218 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Forgot Password
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.status(200).json({ 
+          message: 'If an account exists with this email, you will receive a password reset link.'
+        });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
+      
+      // Send reset email
+      const emailSent = await emailService.sendPasswordResetEmail(user.email, resetToken);
+      
+      if (!emailSent) {
+        console.error('Failed to send password reset email to:', user.email);
+      }
+
+      res.status(200).json({ 
+        message: 'If an account exists with this email, you will receive a password reset link.'
+      });
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ message: 'Failed to process password reset request' });
+    }
+  });
+
+  // Reset Password
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token and new password are required' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+      }
+
+      // Find user with valid reset token
+      const user = await storage.getUserByResetToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and clear reset token
+      await storage.resetPassword(user.id, hashedPassword);
+
+      res.status(200).json({ 
+        message: 'Password reset successfully. You can now log in with your new password.'
+      });
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ message: 'Failed to reset password' });
+    }
+  });
+
+  // 2FA Management
+  app.post('/api/auth/2fa/enable', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+
+      // Generate backup codes
+      const backupCodes = generateBackupCodes();
+
+      // Enable 2FA
+      await storage.enable2FA(userId, backupCodes);
+
+      res.status(200).json({
+        message: '2FA enabled successfully',
+        backupCodes,
+        warning: 'Save these backup codes in a safe place. They can be used if you lose access to your email.'
+      });
+    } catch (error: any) {
+      console.error('Enable 2FA error:', error);
+      res.status(500).json({ message: 'Failed to enable 2FA' });
+    }
+  });
+
+  app.post('/api/auth/2fa/disable', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({ message: 'Password is required to disable 2FA' });
+      }
+
+      // Verify password
+      const user = await storage.getUserById(userId);
+      const isValidPassword = await bcrypt.compare(password, user!.password);
+
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid password' });
+      }
+
+      // Disable 2FA
+      await storage.disable2FA(userId);
+
+      res.status(200).json({ message: '2FA disabled successfully' });
+    } catch (error: any) {
+      console.error('Disable 2FA error:', error);
+      res.status(500).json({ message: 'Failed to disable 2FA' });
+    }
+  });
+
+  app.post('/api/auth/2fa/verify-backup', async (req, res) => {
+    try {
+      const { email, backupCode } = req.body;
+
+      if (!email || !backupCode) {
+        return res.status(400).json({ message: 'Email and backup code are required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Verify backup code
+      const isValid = await storage.verifyBackupCode(user.id, backupCode.toUpperCase());
+
+      if (!isValid) {
+        return res.status(401).json({ message: 'Invalid backup code' });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+
+      res.json({
+        message: 'Login successful using backup code',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          companyName: user.companyName,
+          subscriptionStatus: user.subscriptionStatus,
+          emailVerified: user.emailVerified,
+          twoFactorEnabled: user.twoFactorEnabled
+        }
+      });
+    } catch (error: any) {
+      console.error('Backup code verification error:', error);
+      res.status(500).json({ message: 'Failed to verify backup code' });
+    }
+  });
+
+  // Resend Verification Email
+  app.post('/api/auth/resend-verification', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+
+      if (!user) {
+        // Don't reveal if email exists
+        return res.status(200).json({ 
+          message: 'If an account exists with this email, a verification link has been sent.'
+        });
+      }
+
+      if (user.emailVerified) {
+        return res.status(200).json({ 
+          message: 'Email is already verified'
+        });
+      }
+
+      // Generate new verification token
+      const newToken = crypto.randomBytes(32).toString('hex');
+      await storage.updateVerificationToken(user.id, newToken);
+
+      // Send verification email
+      const emailSent = await emailService.sendVerificationEmail(user.email, newToken);
+
+      if (!emailSent) {
+        console.error('Failed to send verification email to:', user.email);
+      }
+
+      res.status(200).json({ 
+        message: 'If an account exists with this email, a verification link has been sent.'
+      });
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      res.status(500).json({ message: 'Failed to resend verification email' });
+    }
+  });
+
+  // Get Current User
   app.get('/api/auth/me', authenticateToken, async (req: AuthRequest, res) => {
     res.json({
       user: {
@@ -218,7 +560,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyName: req.user!.companyName,
         contactPersonName: req.user!.contactPersonName,
         subscriptionStatus: req.user!.subscriptionStatus,
-        emailVerified: req.user!.emailVerified
+        emailVerified: req.user!.emailVerified,
+        twoFactorEnabled: req.user!.twoFactorEnabled
       }
     });
   });
@@ -249,7 +592,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Job routes
+  // ==================== JOB ROUTES ====================
+
   app.post('/api/jobs', authenticateToken, requireRole([UserRole.SHIPPING_ENTITY]), async (req: AuthRequest, res) => {
     try {
       const jobData = insertJobSchema.parse({
@@ -395,7 +739,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chat routes
+  // ==================== CHAT ROUTES ====================
+
   app.get('/api/chats', authenticateToken, async (req: AuthRequest, res) => {
     try {
       const chats = await storage.getChatsByUser(req.user!.id);
@@ -406,79 +751,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update the chat retrieval route in backend/routes.ts
-// Replace the existing app.get('/api/chats/job/:jobId'...) route
+  app.get('/api/chats/job/:jobId', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { jobId } = req.params;
+      let chat = await storage.getChatByJobId(parseInt(jobId));
 
-app.get('/api/chats/job/:jobId', authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const { jobId } = req.params;
-    let chat = await storage.getChatByJobId(parseInt(jobId));
+      if (!chat) {
+        // Get job to find participants
+        const job = await storage.getJobById(parseInt(jobId));
+        if (!job) {
+          return res.status(404).json({ message: 'Job not found' });
+        }
 
-    if (!chat) {
-      // Get job to find participants
-      const job = await storage.getJobById(parseInt(jobId));
-      if (!job) {
-        return res.status(404).json({ message: 'Job not found' });
+        // Only create chat if job has both shipper and carrier
+        if (!job.carrierId) {
+          return res.status(400).json({ 
+            message: 'Chat cannot be created until a carrier is assigned to this job' 
+          });
+        }
+
+        // Create chat if it doesn't exist
+        const participants = [job.shipperId];
+        if (job.carrierId) {
+          participants.push(job.carrierId);
+        }
+
+        // Check if user is authorized
+        if (!participants.includes(req.user!.id)) {
+          return res.status(403).json({ message: 'Not authorized to access this chat' });
+        }
+
+        chat = await storage.createChat({
+          jobId: parseInt(jobId),
+          participants,
+          messages: []
+        } as any);
       }
 
-      // Only create chat if job has both shipper and carrier
-      if (!job.carrierId) {
-        return res.status(400).json({ 
-          message: 'Chat cannot be created until a carrier is assigned to this job' 
-        });
-      }
-
-      // Create chat if it doesn't exist
-      const participants = [job.shipperId];
-      if (job.carrierId) {
-        participants.push(job.carrierId);
-      }
-
-      // Check if user is authorized
-      if (!participants.includes(req.user!.id)) {
+      // Check if user is participant
+      if (!chat.participants.includes(req.user!.id)) {
         return res.status(403).json({ message: 'Not authorized to access this chat' });
       }
 
-      chat = await storage.createChat({
-        jobId: parseInt(jobId),
-        participants,
-        messages: []
-      } as any);
+      res.json({ chat });
+    } catch (error: any) {
+      console.error('Chat fetch error:', error);
+      res.status(500).json({ message: 'Failed to fetch chat' });
     }
+  });
 
-    // Check if user is participant
-    if (!chat.participants.includes(req.user!.id)) {
-      return res.status(403).json({ message: 'Not authorized to access this chat' });
+  app.get('/api/chats/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const chat = await storage.getChatById(parseInt(id));
+
+      if (!chat) {
+        return res.status(404).json({ message: 'Chat not found' });
+      }
+
+      // Check if user is participant
+      if (!chat.participants.includes(req.user!.id)) {
+        return res.status(403).json({ message: 'Not authorized to access this chat' });
+      }
+
+      res.json({ chat });
+    } catch (error: any) {
+      console.error('Chat fetch error:', error);
+      res.status(500).json({ message: 'Failed to fetch chat' });
     }
-
-    res.json({ chat });
-  } catch (error: any) {
-    console.error('Chat fetch error:', error);
-    res.status(500).json({ message: 'Failed to fetch chat' });
-  }
-});
-
-// Also add a direct GET route for chat by ID
-app.get('/api/chats/:id', authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const chat = await storage.getChatById(parseInt(id));
-
-    if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
-    }
-
-    // Check if user is participant
-    if (!chat.participants.includes(req.user!.id)) {
-      return res.status(403).json({ message: 'Not authorized to access this chat' });
-    }
-
-    res.json({ chat });
-  } catch (error: any) {
-    console.error('Chat fetch error:', error);
-    res.status(500).json({ message: 'Failed to fetch chat' });
-  }
-});
+  });
 
   app.patch('/api/chats/:id/read', authenticateToken, async (req: AuthRequest, res) => {
     try {
@@ -496,66 +837,57 @@ app.get('/api/chats/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
   });
 
-
-// Add this route after the chat routes in backend/routes.ts
-// Around line 430, after the "app.patch('/api/chats/:id/read'..." route
-
-app.post('/api/chats/:id/messages', authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { content } = req.body;
-    
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Message content is required' });
-    }
-
-    // Get chat to verify access
-    const chat = await storage.getChatById(parseInt(id));
-    if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
-    }
-
-    // Check if user is a participant
-    if (!chat.participants.includes(req.user!.id)) {
-      return res.status(403).json({ message: 'Not authorized to send messages in this chat' });
-    }
-
-    // Add message
-    const updatedChat = await storage.addMessage(parseInt(id), req.user!.id, content.trim());
-
-    if (!updatedChat) {
-      return res.status(500).json({ message: 'Failed to add message' });
-    }
-
-    // Send WebSocket notification to other participants
-    for (const participantId of chat.participants) {
-      if (participantId !== req.user!.id) {
-        wsService.sendNotificationToUser(participantId, {
-          type: 'new_message',
-          title: 'New Message',
-          message: `New message from ${req.user!.contactPersonName}`,
-          data: { chatId: id, senderId: req.user!.id }
-        });
+  app.post('/api/chats/:id/messages', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: 'Message content is required' });
       }
+
+      // Get chat to verify access
+      const chat = await storage.getChatById(parseInt(id));
+      if (!chat) {
+        return res.status(404).json({ message: 'Chat not found' });
+      }
+
+      // Check if user is a participant
+      if (!chat.participants.includes(req.user!.id)) {
+        return res.status(403).json({ message: 'Not authorized to send messages in this chat' });
+      }
+
+      // Add message
+      const updatedChat = await storage.addMessage(parseInt(id), req.user!.id, content.trim());
+
+      if (!updatedChat) {
+        return res.status(500).json({ message: 'Failed to add message' });
+      }
+
+      // Send WebSocket notification to other participants
+      for (const participantId of chat.participants) {
+        if (participantId !== req.user!.id) {
+          wsService.sendNotificationToUser(participantId, {
+            type: 'new_message',
+            title: 'New Message',
+            message: `New message from ${req.user!.contactPersonName}`,
+            data: { chatId: id, senderId: req.user!.id }
+          });
+        }
+      }
+
+      res.json({ 
+        message: 'Message sent successfully', 
+        chat: updatedChat 
+      });
+    } catch (error: any) {
+      console.error('Send message error:', error);
+      res.status(500).json({ message: 'Failed to send message' });
     }
+  });
 
-    res.json({ 
-      message: 'Message sent successfully', 
-      chat: updatedChat 
-    });
-  } catch (error: any) {
-    console.error('Send message error:', error);
-    res.status(500).json({ message: 'Failed to send message' });
-  }
-});
+  // ==================== NOTIFICATION ROUTES ====================
 
-
-
-
-
-
-  
-  // Notification routes
   app.get('/api/notifications', authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { limit = '50' } = req.query;
@@ -583,7 +915,8 @@ app.post('/api/chats/:id/messages', authenticateToken, async (req: AuthRequest, 
     }
   });
 
-  // Payment routes (Stripe integration)
+  // ==================== PAYMENT ROUTES (Stripe integration) ====================
+
   if (stripe) {
     app.post('/api/payments/create-subscription', authenticateToken, requireRole([UserRole.TRUCKING_COMPANY]), async (req: AuthRequest, res) => {
       try {
@@ -704,7 +1037,8 @@ app.post('/api/chats/:id/messages', authenticateToken, async (req: AuthRequest, 
     });
   }
 
-  // Admin routes
+  // ==================== ADMIN ROUTES ====================
+
   app.get('/api/admin/dashboard', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SUPPORT]), async (req: AuthRequest, res) => {
     try {
       const stats = {
