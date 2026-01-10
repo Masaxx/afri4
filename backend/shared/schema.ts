@@ -105,6 +105,13 @@ export const users = pgTable('users', {
   accountLocked: boolean('account_locked').notNull().default(false),
   lockExpires: timestamp('lock_expires'),
   
+  // 2FA fields
+  twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
+  twoFactorSecret: varchar('two_factor_secret', { length: 255 }),
+  twoFactorCode: varchar('two_factor_code', { length: 10 }),
+  twoFactorExpires: timestamp('two_factor_expires'),
+  backupCodes: json('backup_codes').$type<string[]>(),
+  
   // Timestamps
   createdAt: timestamp('created_at').notNull().default(sql`now()`),
   updatedAt: timestamp('updated_at').notNull().default(sql`now()`)
@@ -117,8 +124,8 @@ export const jobs = pgTable('jobs', {
   
   // Cargo details
   cargoType: cargoTypeEnum('cargo_type').notNull(),
-  cargoWeight: integer('cargo_weight').notNull(), // in kg
-  cargoVolume: integer('cargo_volume').notNull(), // in m³
+  cargoWeight: integer('cargo_weight').notNull(),
+  cargoVolume: integer('cargo_volume').notNull(),
   industry: industryEnum('industry').notNull(),
   
   // Locations
@@ -202,7 +209,7 @@ export const disputes = pgTable('disputes', {
   resolvedAt: timestamp('resolved_at')
 });
 
-// Drizzle schemas and types
+// Type exports
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertJobSchema = createInsertSchema(jobs);
@@ -229,7 +236,6 @@ export type SelectRating = typeof ratings.$inferSelect;
 export type InsertDispute = typeof disputes.$inferInsert;
 export type SelectDispute = typeof disputes.$inferSelect;
 
-// Legacy types for compatibility
 export type User = SelectUser;
 export type Job = SelectJob;
 export type Chat = SelectChat;
