@@ -365,7 +365,7 @@ The LoadLink Africa Security Team`;
     }
 
     try {
-      const testEmail = 'test@example.com';
+      const testEmail = 'leatilemanando@gmail.com';
       const { data, error } = await this.resend.emails.send({
         from: this.fromEmail,
         to: testEmail,
