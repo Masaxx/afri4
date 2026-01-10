@@ -120,7 +120,7 @@ async function runMigrations() {
     }
     console.log('[MIGRATION] ✓ Enums created/verified');
 
-    // Create users table
+    // Create users table with enhanced authentication fields
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -136,6 +136,7 @@ async function runMigrations() {
         fleet_size INTEGER,
         cargo_types JSON,
         documents JSON,
+        verified BOOLEAN NOT NULL DEFAULT false,
         subscription_status subscription_status NOT NULL DEFAULT 'inactive',
         subscription_expires_at TIMESTAMP,
         stripe_customer_id VARCHAR(255),
@@ -147,11 +148,78 @@ async function runMigrations() {
         login_attempts INTEGER NOT NULL DEFAULT 0,
         account_locked BOOLEAN NOT NULL DEFAULT false,
         lock_expires TIMESTAMP,
+        two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
+        two_factor_secret VARCHAR(255),
+        two_factor_code VARCHAR(10),
+        two_factor_expires TIMESTAMP,
+        backup_codes JSON,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
     `);
     console.log('[MIGRATION] ✓ Users table created/verified');
+
+    // Add 2FA columns to existing table if they don't exist
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='two_factor_enabled') THEN
+          ALTER TABLE users ADD COLUMN two_factor_enabled BOOLEAN NOT NULL DEFAULT false;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='two_factor_secret') THEN
+          ALTER TABLE users ADD COLUMN two_factor_secret VARCHAR(255);
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='two_factor_code') THEN
+          ALTER TABLE users ADD COLUMN two_factor_code VARCHAR(10);
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='two_factor_expires') THEN
+          ALTER TABLE users ADD COLUMN two_factor_expires TIMESTAMP;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='backup_codes') THEN
+          ALTER TABLE users ADD COLUMN backup_codes JSON;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='email_verification_token') THEN
+          ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(255);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='password_reset_token') THEN
+          ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='password_reset_expires') THEN
+          ALTER TABLE users ADD COLUMN password_reset_expires TIMESTAMP;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='login_attempts') THEN
+          ALTER TABLE users ADD COLUMN login_attempts INTEGER NOT NULL DEFAULT 0;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='account_locked') THEN
+          ALTER TABLE users ADD COLUMN account_locked BOOLEAN NOT NULL DEFAULT false;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='lock_expires') THEN
+          ALTER TABLE users ADD COLUMN lock_expires TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+    console.log('[MIGRATION] ✓ Enhanced authentication columns added/verified');
 
     // Create jobs table
     await pool.query(`
@@ -248,11 +316,15 @@ async function runMigrations() {
     const indexes = [
       'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
       'CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)',
+      'CREATE INDEX IF NOT EXISTS idx_users_verification_token ON users(email_verification_token)',
+      'CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(password_reset_token)',
       'CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status)',
       'CREATE INDEX IF NOT EXISTS idx_jobs_shipper ON jobs(shipper_id)',
       'CREATE INDEX IF NOT EXISTS idx_jobs_carrier ON jobs(carrier_id)',
       'CREATE INDEX IF NOT EXISTS idx_chats_job ON chats(job_id)',
-      'CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)'
+      'CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes(status)',
+      'CREATE INDEX IF NOT EXISTS idx_disputes_admin ON disputes(admin_id)'
     ];
 
     for (const indexQuery of indexes) {
@@ -297,7 +369,12 @@ async function runMigrations() {
 
     // Health check endpoint
     app.get('/health', (req, res) => {
-      res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+      res.status(200).json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        database: 'connected'
+      });
     });
 
     // API not found handler
@@ -327,6 +404,8 @@ async function runMigrations() {
         hour12: true,
       })} [express] serving on port ${port}`);
       console.log('[SERVER] ✓ Server successfully started and listening for requests\n');
+      console.log('[SERVER] 📍 Health check: http://localhost:' + port + '/health');
+      console.log('[SERVER] 📍 API endpoints available at http://localhost:' + port + '/api/*');
     });
   } catch (error) {
     console.error('[STARTUP] Failed to start server:', error);
