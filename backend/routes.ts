@@ -1152,6 +1152,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+// Add to routes.ts
+app.get('/api/debug/test-email', async (req, res) => {
+  try {
+    const testEmail = req.query.email as string || 'leatilemanando@gmail.com';
+    
+    // Test verification email
+    const verificationSent = await emailService.sendVerificationEmail(testEmail, 'test-verification-token');
+    
+    // Test 2FA email
+    const twoFactorSent = await emailService.send2FACode(testEmail, '123456');
+    
+    res.json({
+      success: verificationSent && twoFactorSent,
+      verificationEmail: verificationSent ? 'Sent' : 'Failed',
+      twoFactorEmail: twoFactorSent ? 'Sent' : 'Failed',
+      message: verificationSent && twoFactorSent 
+        ? 'Test emails sent successfully' 
+        : 'Some emails failed to send',
+      testEmail: testEmail
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Test failed',
+      error: error.message
+    });
+  }
+});
+
+
+  
   // User dispute creation route
   app.post('/api/disputes', authenticateToken, async (req: AuthRequest, res) => {
     try {
