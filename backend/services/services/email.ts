@@ -1,282 +1,217 @@
 import nodemailer from 'nodemailer';
 
-// Zoho SMTP Configuration
-const ZOHO_CONFIG = {
-  host: process.env.SMTP_HOST || 'smtp.zoho.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+interface EmailConfig {
+  host: string;
+  port: number;
+  secure: boolean;
   auth: {
-    user: process.env.SMTP_USER, // your Zoho email
-    pass: process.env.SMTP_PASS  // your Zoho password or app-specific password
-  }
-};
+    user: string;
+    pass: string;
+  };
+}
 
-class EmailService {
+interface EmailService {
+  sendVerificationEmail(to: string, token: string): Promise<boolean>;
+  sendPasswordResetEmail(to: string, token: string): Promise<boolean>;
+  send2FACode(to: string, code: string): Promise<boolean>;
+}
+
+class ZohoEmailService implements EmailService {
   private transporter: nodemailer.Transporter | null = null;
+  private fromEmail: string;
+  private baseUrl: string;
 
   constructor() {
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      this.transporter = nodemailer.createTransport(ZOHO_CONFIG);
+    const emailEnabled = process.env.EMAIL_ENABLED === 'true';
+    
+    if (emailEnabled && process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const config: EmailConfig = {
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '587'),
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      };
+
+      this.transporter = nodemailer.createTransport(config);
+      this.fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+      this.baseUrl = process.env.FRONTEND_URL || 'https://www.loadxafrica.com';
       
       // Verify connection
-      this.transporter.verify((error) => {
-        if (error) {
-          console.error('Email service connection failed:', error);
-        } else {
-          console.log('✓ Email service ready');
-        }
-      });
+      this.verifyConnection();
     } else {
       console.warn('⚠ Email credentials not configured. Email functionality disabled.');
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
-    if (!this.transporter) {
-      console.log('Email service not configured. Email not sent to:', to);
-      return false;
-    }
+  private async verifyConnection(): Promise<void> {
+    if (!this.transporter) return;
 
     try {
-      await this.transporter.sendMail({
-        from: `"LoadLink Africa" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
-        to,
-        subject,
-        html
-      });
-      console.log('✓ Email sent to:', to);
+      await this.transporter.verify();
+      console.log('✅ Email service connected successfully');
+    } catch (error) {
+      console.error('❌ Email service connection failed:', error);
+      this.transporter = null;
+    }
+  }
+
+  async sendVerificationEmail(to: string, token: string): Promise<boolean> {
+    if (!this.transporter) {
+      console.warn('Email service not configured. Skipping verification email.');
+      return false;
+    }
+
+    const verificationUrl = `${this.baseUrl}/verify-email?token=${token}`;
+    
+    const mailOptions = {
+      from: `LoadLink Africa <${this.fromEmail}>`,
+      to: to,
+      subject: 'Verify Your Email - LoadLink Africa',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0;">LoadLink Africa</h1>
+          </div>
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Welcome to LoadLink Africa! 🎉</h2>
+            <p>Thank you for registering. Please verify your email address to activate your account.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        color: white; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-weight: bold; 
+                        display: inline-block;">
+                Verify Email Address
+              </a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you didn't create an account, you can safely ignore this email.</p>
+          </div>
+          <div style="padding: 20px; text-align: center; color: #999; font-size: 12px; background-color: #f0f0f0;">
+            <p>LoadLink Africa - Connecting Shipping Companies with Truckers Across Africa</p>
+            <p>© ${new Date().getFullYear()} LoadLink Africa. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+      text: `Welcome to LoadLink Africa! Please verify your email by clicking this link: ${verificationUrl}`
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Verification email sent to: ${to}`);
       return true;
     } catch (error) {
-      console.error('✗ Email sending failed:', error);
+      console.error('❌ Failed to send verification email:', error);
       return false;
     }
   }
 
-  async sendVerificationEmail(email: string, token: string): Promise<boolean> {
-    const verificationUrl = `${process.env.FRONTEND_URL || 'https://www.loadxafrica.com'}/verify-email?token=${token}`;
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Verify Your Email</title>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
-          <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <!-- Header -->
-                <tr>
-                  <td style="background: linear-gradient(135deg, #3b82f6 0%, #059669 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">LoadLink Africa</h1>
-                  </td>
-                </tr>
-                
-                <!-- Content -->
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">Verify Your Email Address</h2>
-                    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                      Thank you for registering with LoadLink Africa! Please click the button below to verify your email address and activate your account.
-                    </p>
-                    
-                    <!-- Button -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
-                      <tr>
-                        <td align="center">
-                          <a href="${verificationUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-size: 16px; font-weight: 600;">
-                            Verify Email Address
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
-                      Or copy and paste this link in your browser:<br>
-                      <a href="${verificationUrl}" style="color: #3b82f6; word-break: break-all;">${verificationUrl}</a>
-                    </p>
-                    
-                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
-                      If you didn't create an account with LoadLink Africa, please ignore this email.
-                    </p>
-                  </td>
-                </tr>
-                
-                <!-- Footer -->
-                <tr>
-                  <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-                    <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                      © ${new Date().getFullYear()} LoadLink Africa. All rights reserved.<br>
-                      This is an automated message, please do not reply.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
+  async sendPasswordResetEmail(to: string, token: string): Promise<boolean> {
+    if (!this.transporter) {
+      console.warn('Email service not configured. Skipping password reset email.');
+      return false;
+    }
 
-    return this.sendEmail(email, 'Verify Your LoadLink Africa Account', html);
+    const resetUrl = `${this.baseUrl}/reset-password?token=${token}`;
+    
+    const mailOptions = {
+      from: `LoadLink Africa <${this.fromEmail}>`,
+      to: to,
+      subject: 'Reset Your Password - LoadLink Africa',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0;">Password Reset</h1>
+          </div>
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Reset Your Password</h2>
+            <p>We received a request to reset your password. Click the button below to create a new password.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" 
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        color: white; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-weight: bold; 
+                        display: inline-block;">
+                Reset Password
+              </a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+            <p><strong>This link expires in 1 hour.</strong></p>
+            <p>If you didn't request a password reset, you can safely ignore this email.</p>
+          </div>
+          <div style="padding: 20px; text-align: center; color: #999; font-size: 12px; background-color: #f0f0f0;">
+            <p>LoadLink Africa - Connecting Shipping Companies with Truckers Across Africa</p>
+            <p>© ${new Date().getFullYear()} LoadLink Africa. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+      text: `Reset your LoadLink Africa password by clicking this link: ${resetUrl} (expires in 1 hour)`
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Password reset email sent to: ${to}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to send password reset email:', error);
+      return false;
+    }
   }
 
-  async sendPasswordResetEmail(email: string, token: string): Promise<boolean> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://www.loadxafrica.com'}/reset-password?token=${token}`;
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reset Your Password</title>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
-          <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <!-- Header -->
-                <tr>
-                  <td style="background: linear-gradient(135deg, #3b82f6 0%, #059669 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">LoadLink Africa</h1>
-                  </td>
-                </tr>
-                
-                <!-- Content -->
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">Reset Your Password</h2>
-                    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                      We received a request to reset your password for your LoadLink Africa account. Click the button below to set a new password.
-                    </p>
-                    
-                    <!-- Button -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
-                      <tr>
-                        <td align="center">
-                          <a href="${resetUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-size: 16px; font-weight: 600;">
-                            Reset Password
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
-                      Or copy and paste this link in your browser:<br>
-                      <a href="${resetUrl}" style="color: #3b82f6; word-break: break-all;">${resetUrl}</a>
-                    </p>
-                    
-                    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
-                      <p style="color: #92400e; font-size: 14px; line-height: 1.6; margin: 0;">
-                        <strong>Security Notice:</strong> This link will expire in 1 hour for your security.
-                      </p>
-                    </div>
-                    
-                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
-                      If you didn't request a password reset, please ignore this email or contact support if you have concerns.
-                    </p>
-                  </td>
-                </tr>
-                
-                <!-- Footer -->
-                <tr>
-                  <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-                    <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                      © ${new Date().getFullYear()} LoadLink Africa. All rights reserved.<br>
-                      This is an automated message, please do not reply.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
+  async send2FACode(to: string, code: string): Promise<boolean> {
+    if (!this.transporter) {
+      console.warn('Email service not configured. Skipping 2FA email.');
+      return false;
+    }
 
-    return this.sendEmail(email, 'Reset Your LoadLink Africa Password', html);
-  }
+    const mailOptions = {
+      from: `LoadLink Africa <${this.fromEmail}>`,
+      to: to,
+      subject: 'Your 2FA Code - LoadLink Africa',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0;">Two-Factor Authentication</h1>
+          </div>
+          <div style="padding: 30px; background-color: #f9f9f9; text-align: center;">
+            <h2>Your 2FA Code</h2>
+            <p>Enter this code to complete your login:</p>
+            <div style="font-size: 48px; font-weight: bold; letter-spacing: 10px; color: #667eea; margin: 30px 0;">
+              ${code}
+            </div>
+            <p><strong>This code expires in 10 minutes.</strong></p>
+            <p>If you didn't request this code, please secure your account immediately.</p>
+          </div>
+          <div style="padding: 20px; text-align: center; color: #999; font-size: 12px; background-color: #f0f0f0;">
+            <p>LoadLink Africa - Connecting Shipping Companies with Truckers Across Africa</p>
+            <p>© ${new Date().getFullYear()} LoadLink Africa. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+      text: `Your LoadLink Africa 2FA code is: ${code} (expires in 10 minutes)`
+    };
 
-  async send2FACode(email: string, code: string): Promise<boolean> {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Your 2FA Code</title>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
-          <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <!-- Header -->
-                <tr>
-                  <td style="background: linear-gradient(135deg, #3b82f6 0%, #059669 100%); padding: 40px 20px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">LoadLink Africa</h1>
-                  </td>
-                </tr>
-                
-                <!-- Content -->
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">Two-Factor Authentication</h2>
-                    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                      Use the code below to complete your login:
-                    </p>
-                    
-                    <!-- Code -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
-                      <tr>
-                        <td align="center">
-                          <div style="background-color: #f3f4f6; border: 2px dashed #3b82f6; border-radius: 8px; padding: 20px; display: inline-block;">
-                            <p style="color: #3b82f6; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">
-                              ${code}
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
-                      <p style="color: #92400e; font-size: 14px; line-height: 1.6; margin: 0;">
-                        <strong>Security Notice:</strong> This code expires in 10 minutes. Never share this code with anyone.
-                      </p>
-                    </div>
-                    
-                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
-                      If you didn't attempt to log in, please secure your account immediately by changing your password.
-                    </p>
-                  </td>
-                </tr>
-                
-                <!-- Footer -->
-                <tr>
-                  <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-                    <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                      © ${new Date().getFullYear()} LoadLink Africa. All rights reserved.<br>
-                      This is an automated message, please do not reply.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
-
-    return this.sendEmail(email, 'Your LoadLink Africa 2FA Code', html);
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ 2FA email sent to: ${to}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to send 2FA email:', error);
+      return false;
+    }
   }
 }
 
-export const emailService = new EmailService();
+export const emailService = new ZohoEmailService();
