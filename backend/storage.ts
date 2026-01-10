@@ -16,7 +16,7 @@ import type {
 import { users, jobs, chats, notifications, ratings, disputes } from './shared/schema.js';
 import bcrypt from 'bcryptjs';
 import { db } from './db.js';
-import { eq, and, or, desc, asc, count, sql } from 'drizzle-orm';
+import { eq, and, or, desc, gt, sql } from 'drizzle-orm';
 
 interface IStorage {
   // Users
@@ -30,6 +30,30 @@ interface IStorage {
     subscriptionStatus: 'active' | 'inactive' | 'trial';
     subscriptionExpiresAt?: Date;
   }): Promise<void>;
+  
+  // Email Verification
+  getUserByVerificationToken(token: string): Promise<User | null>;
+  verifyUserEmail(userId: number): Promise<void>;
+  updateVerificationToken(userId: number, token: string): Promise<void>;
+  
+  // Password Reset
+  setPasswordResetToken(userId: number, token: string, expires: Date): Promise<void>;
+  getUserByResetToken(token: string): Promise<User | null>;
+  resetPassword(userId: number, hashedPassword: string): Promise<void>;
+  
+  // Account Locking
+  incrementLoginAttempts(userId: number): Promise<number>;
+  resetLoginAttempts(userId: number): Promise<void>;
+  lockAccount(userId: number, until: Date): Promise<void>;
+  unlockAccount(userId: number): Promise<void>;
+  
+  // 2FA Methods
+  set2FACode(userId: number, code: string, expiresAt: Date): Promise<void>;
+  verify2FACode(userId: number, code: string): Promise<boolean>;
+  clear2FACode(userId: number): Promise<void>;
+  enable2FA(userId: number, backupCodes: string[]): Promise<void>;
+  disable2FA(userId: number): Promise<void>;
+  verifyBackupCode(userId: number, code: string): Promise<boolean>;
   
   // Jobs
   createJob(data: Omit<InsertJob, 'createdAt' | 'updatedAt'>): Promise<Job>;
@@ -102,7 +126,8 @@ interface IStorage {
 }
 
 class PostgreSQLStorage implements IStorage {
-  // Users
+  // ==================== USER METHODS ====================
+
   async createUser(data: Omit<InsertUser, 'createdAt' | 'updatedAt'>): Promise<User> {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
@@ -111,7 +136,9 @@ class PostgreSQLStorage implements IStorage {
       .values({
         ...data,
         password: hashedPassword,
-      })
+        loginAttempts: 0,
+        accountLocked: false,
+      } as any)
       .returning();
     
     return user;
@@ -163,7 +190,230 @@ class PostgreSQLStorage implements IStorage {
       .where(eq(users.id, id));
   }
 
-  // Jobs
+  // ==================== EMAIL VERIFICATION ====================
+
+  async getUserByVerificationToken(token: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.emailVerificationToken, token));
+    
+    return user || null;
+  }
+
+  async verifyUserEmail(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        emailVerified: true,
+        emailVerificationToken: null,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async updateVerificationToken(userId: number, token: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        emailVerificationToken: token,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  // ==================== PASSWORD RESET ====================
+
+  async setPasswordResetToken(userId: number, token: string, expires: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        passwordResetToken: token,
+        passwordResetExpires: expires,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByResetToken(token: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.passwordResetToken, token),
+          gt(users.passwordResetExpires, new Date())
+        )
+      );
+    
+    return user || null;
+  }
+
+  async resetPassword(userId: number, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  // ==================== ACCOUNT LOCKING ====================
+
+  async incrementLoginAttempts(userId: number): Promise<number> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) return 0;
+
+    const newAttempts = (user.loginAttempts || 0) + 1;
+
+    await db
+      .update(users)
+      .set({
+        loginAttempts: newAttempts,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+
+    return newAttempts;
+  }
+
+  async resetLoginAttempts(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        loginAttempts: 0,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async lockAccount(userId: number, until: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        accountLocked: true,
+        lockExpires: until,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async unlockAccount(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        accountLocked: false,
+        lockExpires: null,
+        loginAttempts: 0,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  // ==================== 2FA METHODS ====================
+
+  async set2FACode(userId: number, code: string, expiresAt: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        twoFactorCode: code,
+        twoFactorExpires: expiresAt,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async verify2FACode(userId: number, code: string): Promise<boolean> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.twoFactorCode, code),
+          gt(users.twoFactorExpires, new Date())
+        )
+      );
+
+    return !!user;
+  }
+
+  async clear2FACode(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        twoFactorCode: null,
+        twoFactorExpires: null,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async enable2FA(userId: number, backupCodes: string[]): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        twoFactorEnabled: true,
+        backupCodes: backupCodes,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async disable2FA(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        twoFactorCode: null,
+        twoFactorExpires: null,
+        backupCodes: null,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+  }
+
+  async verifyBackupCode(userId: number, code: string): Promise<boolean> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user || !user.backupCodes) {
+      return false;
+    }
+
+    const backupCodes = user.backupCodes as string[];
+    const codeIndex = backupCodes.indexOf(code);
+
+    if (codeIndex === -1) {
+      return false;
+    }
+
+    // Remove used backup code
+    const newBackupCodes = backupCodes.filter((_, index) => index !== codeIndex);
+
+    await db
+      .update(users)
+      .set({
+        backupCodes: newBackupCodes,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(users.id, userId));
+
+    return true;
+  }
+
+  // ==================== JOB METHODS ====================
+
   async createJob(data: Omit<InsertJob, 'createdAt' | 'updatedAt'>): Promise<Job> {
     const [job] = await db
       .insert(jobs)
@@ -268,7 +518,8 @@ class PostgreSQLStorage implements IStorage {
     return updatedJob || null;
   }
 
-  // Chats
+  // ==================== CHAT METHODS ====================
+
   async createChat(data: Omit<InsertChat, 'createdAt' | 'updatedAt'>): Promise<Chat> {
     const [chat] = await db
       .insert(chats)
@@ -357,7 +608,8 @@ class PostgreSQLStorage implements IStorage {
     return true;
   }
 
-  // Notifications
+  // ==================== NOTIFICATION METHODS ====================
+
   async createNotification(data: Omit<InsertNotification, 'createdAt'>): Promise<Notification> {
     const [notification] = await db
       .insert(notifications)
@@ -392,7 +644,8 @@ class PostgreSQLStorage implements IStorage {
       .where(eq(notifications.userId, userId));
   }
 
-  // Ratings
+  // ==================== RATING METHODS ====================
+
   async createRating(data: Omit<InsertRating, 'createdAt'>): Promise<Rating> {
     const [rating] = await db
       .insert(ratings)
@@ -428,7 +681,8 @@ class PostgreSQLStorage implements IStorage {
     return result?.avgRating || 0;
   }
   
-  // Analytics operations
+  // ==================== ANALYTICS METHODS ====================
+
   async getUserCount(role?: string): Promise<number> {
     let query = db.select({ count: sql<number>`count(*)` }).from(users);
     
@@ -450,10 +704,9 @@ class PostgreSQLStorage implements IStorage {
     const [result] = await query;
     return result?.count || 0;
   }
-  
-  // Removed getMonthlyRevenue()
 
-  // Additional methods needed by routes
+  // ==================== HELPER METHODS ====================
+
   async getJobsByShipper(shipperId: number): Promise<Job[]> {
     return this.getUserJobs(shipperId, 'shipper');
   }
@@ -470,7 +723,8 @@ class PostgreSQLStorage implements IStorage {
     return this.getUserNotifications(userId, limit);
   }
   
-  // Admin operations
+  // ==================== ADMIN METHODS ====================
+
   async getAllUsers(filters: {
     role?: string;
     verified?: boolean;
@@ -537,7 +791,8 @@ class PostgreSQLStorage implements IStorage {
     } as any);
   }
   
-  // Dispute operations
+  // ==================== DISPUTE METHODS ====================
+
   async createDispute(data: Omit<InsertDispute, 'createdAt' | 'updatedAt'>): Promise<Dispute> {
     const [dispute] = await db
       .insert(disputes)
