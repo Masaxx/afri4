@@ -89,6 +89,7 @@ export const users = pgTable('users', {
     fileUrl: string;
     verified: boolean;
   }>>(),
+  verified: boolean('verified').notNull().default(false),
   
   // Subscription fields
   subscriptionStatus: subscriptionStatusEnum('subscription_status').notNull().default('inactive'),
@@ -124,8 +125,8 @@ export const jobs = pgTable('jobs', {
   
   // Cargo details
   cargoType: cargoTypeEnum('cargo_type').notNull(),
-  cargoWeight: integer('cargo_weight').notNull(),
-  cargoVolume: integer('cargo_volume').notNull(),
+  cargoWeight: integer('cargo_weight').notNull(), // in kg
+  cargoVolume: integer('cargo_volume').notNull(), // in m³
   industry: industryEnum('industry').notNull(),
   
   // Locations
@@ -209,7 +210,7 @@ export const disputes = pgTable('disputes', {
   resolvedAt: timestamp('resolved_at')
 });
 
-// Type exports
+// Drizzle schemas and types
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertJobSchema = createInsertSchema(jobs);
@@ -236,6 +237,7 @@ export type SelectRating = typeof ratings.$inferSelect;
 export type InsertDispute = typeof disputes.$inferInsert;
 export type SelectDispute = typeof disputes.$inferSelect;
 
+// Legacy types for compatibility
 export type User = SelectUser;
 export type Job = SelectJob;
 export type Chat = SelectChat;
@@ -273,6 +275,48 @@ export const registerShippingSchema = z.object({
   country: z.enum([Country.BOTSWANA, Country.SOUTH_AFRICA, Country.NAMIBIA, Country.ZIMBABWE, Country.ZAMBIA]).default(Country.BOTSWANA)
 });
 
+// Enhanced authentication schemas
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1)
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email()
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8)
+});
+
+export const resendVerificationSchema = z.object({
+  email: z.string().email()
+});
+
+export const enable2FASchema = z.object({});
+
+export const disable2FASchema = z.object({
+  password: z.string().min(1)
+});
+
+export const verifyBackupCodeSchema = z.object({
+  email: z.string().email(),
+  backupCode: z.string().min(1)
+});
+
+export const twoFactorCodeSchema = z.object({
+  email: z.string().email(),
+  twoFactorCode: z.string().min(6).max(6)
+});
+
+export type VerifyEmailData = z.infer<typeof verifyEmailSchema>;
+export type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
+export type ResendVerificationData = z.infer<typeof resendVerificationSchema>;
+export type Enable2FAData = z.infer<typeof enable2FASchema>;
+export type Disable2FAData = z.infer<typeof disable2FASchema>;
+export type VerifyBackupCodeData = z.infer<typeof verifyBackupCodeSchema>;
+export type TwoFactorCodeData = z.infer<typeof twoFactorCodeSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
 export type RegisterTruckingData = z.infer<typeof registerTruckingSchema>;
 export type RegisterShippingData = z.infer<typeof registerShippingSchema>;
