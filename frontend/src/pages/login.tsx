@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck } from "lucide-react";
+import { Truck, Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -21,18 +22,53 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [, navigate] = useLocation();
-  const { login, isLoginLoading } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true);
+    
     try {
-      await login(data);
+      const response = await apiRequest('POST', '/api/auth/login', data);
+      const result = await response.json();
+      
+      // Check if 2FA is required
+      if (result.requires2FA) {
+        // Store credentials temporarily for 2FA verification
+        sessionStorage.setItem('2fa_email', data.email);
+        sessionStorage.setItem('2fa_password', data.password);
+        
+        toast({
+          title: "2FA Required",
+          description: result.message,
+        });
+        
+        navigate('/verify-2fa');
+        return;
+      }
+      
+      // Normal login success
+      localStorage.setItem('auth_token', result.token);
+      
+      toast({
+        title: "Success",
+        description: "Login successful!",
+      });
+      
       navigate("/dashboard");
-    } catch (error) {
-      // Error handled by useAuth hook
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,13 +111,23 @@ export default function Login() {
 
                 <div>
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    {...form.register("password")}
-                    placeholder="Enter your password"
-                    data-testid="input-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...form.register("password")}
+                      placeholder="Enter your password"
+                      data-testid="input-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      data-testid="toggle-password"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {form.formState.errors.password && (
                     <p className="text-destructive text-sm mt-1" data-testid="error-password">
                       {form.formState.errors.password.message}
@@ -92,10 +138,10 @@ export default function Login() {
                 <Button
                   type="submit"
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={isLoginLoading}
+                  disabled={isLoading}
                   data-testid="button-sign-in"
                 >
-                  {isLoginLoading ? "Signing in..." : "Sign In"}
+                  {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
 
